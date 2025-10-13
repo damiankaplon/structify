@@ -1,0 +1,30 @@
+ktor:
+  application:
+    modules:
+      - io.structify.infrastructure.ApplicationKt.module
+  deployment:
+    port: 8080
+
+oauth:
+  auth-url: "${APP_STRUCTIFY_OAUTH_AUTH_URL}:http://localhost:8282/realms/structify/protocol/openid-connect/auth"
+  redirect-url: "${APP_STRUCTIFY_OAUTH_REDIRECT_URL}:http://localhost:8080/token"
+  access-token-url: "${APP_STRUCTIFY_ACCESS_TOKEN_URL}:http://localhost:8282/realms/structify/protocol/openid-connect/token"
+  client-id: "${APP_STRUCTIFY_CLIENT_ID}:APP_STRUCTIFY"
+  secret: "${APP_STRUCTIFY_SECRET}:y8h6R7eMtQky3o4DAcHeiyGq3Y"
+  logout:
+    url: "${APP_STRUCTIFY_LOG_OUT}:http://localhost:8282/realms/structify/protocol/openid-connect/logout"
+
+jwt:
+  jwk-url: "${APP_STRUCTIFY_JWK_URL}:http://localhost:8282/realms/structify/protocol/openid-connect/certs"
+  issuer: "${APP_STRUCTIFY_ISSUER}:http://localhost:8282/realms/structify"
+
+db:
+  jdbcUrl: "${APP_STRUCTIFY_DB_URL}:jdbc:postgresql://localhost:5432/structify?serverTimezone=UTC"
+  user: "${APP_STRUCTIFY_DB_USER}:structify"
+  password: "${APP_STRUCTIFY_DB_PASS}:structify"
+  schema: "${APP_STRUCTIFY_DB_SCHEMA}:public"
+  keycloak:
+    jdbcUrl: "${APP_STRUCTIFY_KC_DB_URL}:jdbc:postgresql://localhost:5432/keycloak?serverTimezone=UTC"
+    user: "${APP_STRUCTIFY_KC_DB_USER}:keycloak"
+    password: "${APP_STRUCTIFY_KC_DB_PASS}:keycloak"
+    schema: "${APP_STRUCTIFY_KC_DB_SCHEMA}:public"
