@@ -9,7 +9,7 @@ data class Table(
     val version: Version
 ) {
 
-    private var versions = setOf(version)
+    var versions = setOf(version); private set
 
     fun add(version: Version)  {
         versions = versions + version
