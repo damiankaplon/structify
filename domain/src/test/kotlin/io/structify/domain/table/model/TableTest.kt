@@ -1,46 +1,54 @@
 package io.structify.domain.table.model
 
-import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import java.util.UUID
+import kotlin.test.Test
 
 internal class TableTest {
 
     @Test
     fun `should change current table version given new version of a table`() {
-        // Given an initial table with version 1
+		// given
         val userId = UUID.randomUUID()
         val tableId = UUID.randomUUID()
-        val v1 = Version(
-            id = UUID.randomUUID(),
-            description = "Initial version",
-            columns = listOf(
+		val table = Table(
+			id = tableId,
+			userId = userId,
+			name = "People",
+		)
+		table.update(
+			listOf(
                 ColumnDefinition(
                     name = "name",
                     description = "Person name",
                     type = ColumnType.StringType(),
                     optional = false
                 )
-            ),
-            orderNumber = 1
-        )
-        val table = Table(
-            id = tableId,
-            userId = userId,
-            name = "People",
-            version = v1
+			)
         )
 
-        assertThat(table.getCurrentVersion()).isEqualTo(v1)
+		// when
+		table.update(
+			listOf(
+				ColumnDefinition(
+					name = "name 2",
+					description = "Person name 2",
+					type = ColumnType.StringType(StringFormat.DATE),
+					optional = false
+				)
+			)
+		)
 
-        val v2 = Version(
-            id = UUID.randomUUID(),
-            description = "Second version",
-            columns = v1.columns,
-            orderNumber = 2
-        )
-        table.add(v2)
-
-        assertThat(table.getCurrentVersion()).isEqualTo(v2)
+		// then
+		val version = table.getCurrentVersion()
+		assertThat(version.orderNumber).isEqualTo(2)
+		assertThat(version.columns).containsExactlyInAnyOrder(
+			ColumnDefinition(
+				name = "name 2",
+				description = "Person name 2",
+				type = ColumnType.StringType(StringFormat.DATE),
+				optional = false
+			)
+		)
     }
 }

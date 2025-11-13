@@ -7,177 +7,141 @@ import io.structify.domain.table.model.Table
 import io.structify.domain.table.model.Version
 import io.structify.infrastructure.test.DatabaseIntegrationTest
 import org.assertj.core.api.Assertions.assertThat
-import org.jetbrains.exposed.sql.SchemaUtils
 import java.util.UUID
 import kotlin.test.Test
 
 internal class ExposedTableRepositoryIntegrationTest : DatabaseIntegrationTest() {
 
-    private val repo = ExposedTableRepository()
+	private val repo = ExposedTableRepository()
 
-    @Test
-    fun `should persist table aggregate into database`() = rollbackTransaction {
-        // given
-        val userId = UUID.randomUUID()
-        val tableId = UUID.randomUUID()
-        val v1Id = UUID.randomUUID()
-        val v1 = Version(
-            id = v1Id,
-            description = "Initial version",
-            columns = listOf(
-                ColumnDefinition(
-                    name = "name",
-                    description = "Person name",
-                    type = ColumnType.StringType(format = StringFormat.DATE),
-                    optional = false
-                ),
-                ColumnDefinition(
-                    name = "age",
-                    description = "Person age",
-                    type = ColumnType.NumberType,
-                    optional = true
-                )
-            ),
-            orderNumber = 1
-        )
-        val table = Table(
-            id = tableId,
-            userId = userId,
-            name = "People",
-            version = v1
-        )
+	@Test
+	fun `should persist table aggregate into database`() = rollbackTransaction {
+		// given
+		val userId = UUID.randomUUID()
+		val tableId = UUID.randomUUID()
 
-        // when
-        val persisted = repo.persist(table)
+		val table = Table(
+			id = tableId,
+			userId = userId,
+			name = "People",
+		).apply {
+			update(
+				listOf(
+					ColumnDefinition(
+						name = "name",
+						description = "Person name",
+						type = ColumnType.StringType(format = StringFormat.DATE),
+						optional = false
+					),
+				)
+			)
+		}
 
-        // then
-        assertThat(persisted).isEqualTo(table)
+		// when
+		val persisted = repo.persist(table)
 
-        val found = repo.findById(userId, tableId)
-        assertThat(found).isNotNull
-        val loaded = found!!
+		// then
+		assertThat(persisted).isEqualTo(table)
 
-        // table aggregate
-        assertThat(loaded.id).isEqualTo(tableId)
-        assertThat(loaded.userId).isEqualTo(userId)
-        assertThat(loaded.name).isEqualTo("People")
+		val found = repo.findById(userId, tableId)
+		assertThat(found).isNotNull
+		val loaded = found!!
 
-        // versions
-        assertThat(loaded.versions).hasSize(1)
-        val loadedV1 = loaded.versions.first()
-        assertThat(loadedV1.id).isEqualTo(v1Id)
-        assertThat(loadedV1.description).isEqualTo("Initial version")
-        assertThat(loadedV1.orderNumber).isEqualTo(1)
+		// table aggregate
+		assertThat(loaded.id).isEqualTo(tableId)
+		assertThat(loaded.userId).isEqualTo(userId)
+		assertThat(loaded.name).isEqualTo("People")
 
-        // columns
-        assertThat(loadedV1.columns).hasSize(2)
-        val nameCol = loadedV1.columns.first { it.name == "name" }
-        assertThat(nameCol.description).isEqualTo("Person name")
-        assertThat(nameCol.type).isEqualTo(ColumnType.StringType(format = StringFormat.DATE))
-        assertThat(nameCol.optional).isFalse()
+		// versions
+		assertThat(loaded.versions).hasSize(1)
+		val loadedV1 = loaded.versions.first()
+		assertThat(loadedV1.orderNumber).isEqualTo(1)
 
-        val ageCol = loadedV1.columns.first { it.name == "age" }
-        assertThat(ageCol.description).isEqualTo("Person age")
-        assertThat(ageCol.type).isEqualTo(ColumnType.NumberType)
-        assertThat(ageCol.optional).isTrue()
-    }
+		// columns
+		assertThat(loadedV1.columns).hasSize(1)
+		val nameCol = loadedV1.columns.first { it.name == "name" }
+		assertThat(nameCol.description).isEqualTo("Person name")
+		assertThat(nameCol.type).isEqualTo(ColumnType.StringType(format = StringFormat.DATE))
+		assertThat(nameCol.optional).isFalse()
+	}
 
-    @Test
-    fun `should upsert existing records when persisting same aggregate again`() = rollbackTransaction {
-        // given
-        val userId = UUID.randomUUID()
-        val tableId = UUID.randomUUID()
-        val v1Id = UUID.randomUUID()
+	@Test
+	fun `should upsert existing records when persisting same aggregate again`() = rollbackTransaction {
+		// given
+		val userId = UUID.randomUUID()
+		val tableId = UUID.randomUUID()
 
-        val v1 = Version(
-            id = v1Id,
-            description = "v1",
-            columns = listOf(
-                ColumnDefinition(
-                    name = "name",
-                    description = "name v1",
-                    type = ColumnType.StringType(),
-                    optional = false
-                )
-            ),
-            orderNumber = 1
-        )
-        val initial = Table(
-            id = tableId,
-            userId = userId,
-            name = "People",
-            version = v1
-        )
-        repo.persist(initial)
+		val table = Table(
+			id = tableId,
+			userId = userId,
+			name = "People",
+		).apply {
+			update(
+				listOf(
+					ColumnDefinition(
+						name = "name", // same pk for columns (versionId+name)
+						description = "name v2",
+						type = ColumnType.StringType(format = StringFormat.DATE),
+						optional = true
+					),
+				),
+			)
+			repo.persist(this)
+		}
 
-        // when - update table name, update existing column, add new column, and add new version
-        val v1Updated = Version(
-            id = v1Id, // same id -> upsert
-            description = "v1 updated",
-            columns = listOf(
-                ColumnDefinition(
-                    name = "name", // same pk for columns (versionId+name)
-                    description = "name v2",
-                    type = ColumnType.StringType(format = StringFormat.DATE),
-                    optional = true
-                ),
-                ColumnDefinition(
-                    name = "age",
-                    description = "age added",
-                    type = ColumnType.NumberType,
-                    optional = false
-                )
-            ),
-            orderNumber = 1
-        )
-        val v2 = Version(
-            id = UUID.randomUUID(),
-            description = "v2",
-            columns = listOf(
-                ColumnDefinition(
-                    name = "city",
-                    description = "city of residence",
-                    type = ColumnType.StringType(),
-                    optional = true
-                )
-            ),
-            orderNumber = 2
-        )
-        val updated = Table(
-            id = tableId,
-            userId = userId,
-            name = "People Updated",
-            version = v1Updated
-        ).apply { add(v2) }
+		table.update(
+			listOf(
+				ColumnDefinition(
+					name = "name",
+					description = "name v2",
+					type = ColumnType.StringType(format = StringFormat.DATE),
+					optional = true
+				),
+				ColumnDefinition(
+					name = "age",
+					description = "age added",
+					type = ColumnType.NumberType,
+					optional = false
+				)
+			),
+		)
+		repo.persist(table)
 
-        repo.persist(updated)
+		// then
+		val found = repo.findById(userId, tableId)
+		assertThat(found).isNotNull
 
-        // then - load aggregate and assert via repository
-        val found = repo.findById(userId, tableId)
-        assertThat(found).isNotNull
-        val loaded = found!!
+		assertThat(found!!.name).isEqualTo("People")
 
-        assertThat(loaded.name).isEqualTo("People Updated")
+		// versions
+		assertThat(found.versions).hasSize(2)
+		val firstVersion = found.versions.minBy(Version::orderNumber)
+		assertThat(firstVersion.orderNumber).isEqualTo(1)
+		assertThat(firstVersion.columns).containsExactlyInAnyOrder(
+			ColumnDefinition(
+				name = "name", // same pk for columns (versionId+name)
+				description = "name v2",
+				type = ColumnType.StringType(format = StringFormat.DATE),
+				optional = true
+			),
+		)
 
-        // versions
-        assertThat(loaded.versions).hasSize(2)
-        val loadedV1 = loaded.versions.first { it.id == v1Id }
-        assertThat(loadedV1.description).isEqualTo("v1 updated")
+		val secondVersion = found.versions.maxBy(Version::orderNumber)
+		assertThat(secondVersion.orderNumber).isEqualTo(2)
+		assertThat(secondVersion.columns).containsExactlyInAnyOrder(
+			ColumnDefinition(
+				name = "name",
+				description = "name v2",
+				type = ColumnType.StringType(format = StringFormat.DATE),
+				optional = true
+			),
+			ColumnDefinition(
+				name = "age",
+				description = "age added",
+				type = ColumnType.NumberType,
+				optional = false
+			)
 
-        // v1 columns upserted: name updated, age inserted
-        assertThat(loadedV1.columns).hasSize(2)
-        val nameCol = loadedV1.columns.first { it.name == "name" }
-        assertThat(nameCol.description).isEqualTo("name v2")
-        assertThat(nameCol.type).isEqualTo(ColumnType.StringType(format = StringFormat.DATE))
-        assertThat(nameCol.optional).isTrue()
-        val ageCol = loadedV1.columns.first { it.name == "age" }
-        assertThat(ageCol.description).isEqualTo("age added")
-        assertThat(ageCol.type).isEqualTo(ColumnType.NumberType)
-        assertThat(ageCol.optional).isFalse()
-
-        // v2 inserted with its column
-        val loadedV2 = loaded.versions.first { it.id == v2.id }
-        assertThat(loadedV2.columns).hasSize(1)
-        assertThat(loadedV2.columns.first().name).isEqualTo("city")
-    }
+		)
+	}
 }

@@ -8,4 +8,6 @@ interface TableRepository {
     suspend fun persist(table: Table): Table
 
     suspend fun findById(userId: UUID, tableId: UUID): Table?
+
+	suspend fun findByIdThrow(userId: UUID, tableId: UUID): Table
 }

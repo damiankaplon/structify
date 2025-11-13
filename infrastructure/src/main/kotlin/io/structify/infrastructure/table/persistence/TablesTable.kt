@@ -14,7 +14,6 @@ object TablesTable : ExposedTable("tables") {
 object TableVersionsTable : ExposedTable("table_versions") {
     val id = uuid("id")
     val tableId = reference("table_id", TablesTable.id, onDelete = ReferenceOption.CASCADE)
-    val description = text("description")
     val orderNumber = integer("order_number")
 
     override val primaryKey = PrimaryKey(id)
