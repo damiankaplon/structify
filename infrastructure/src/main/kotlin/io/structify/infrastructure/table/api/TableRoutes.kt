@@ -25,19 +25,20 @@ fun Route.tableRoutes(
 ) {
 	route("/tables") {
 		post {
-			val principal = call.jwtPrincipalOrThrow()
-			val request = call.receive<CreateTableRequest>()
-
-			val table = Table(
-				userId = principal.userId,
-				name = request.name,
-			)
-
 			transactionalRunner.transaction {
+				val principal = call.jwtPrincipalOrThrow()
+				val request = call.receive<CreateTableRequest>()
+
+				val table = Table(
+					userId = principal.userId,
+					name = request.name,
+				)
+
 				tableRepository.persist(table)
+
+				call.respond(HttpStatusCode.Created, message = TableId(table.id.toString()))
 			}
 
-			call.respond(HttpStatusCode.Created)
 		}
 
 		post("/{tableId}/versions") {
@@ -79,6 +80,11 @@ fun Route.tableRoutes(
 		}
 	}
 }
+
+@Serializable
+data class TableId(
+	val id: String,
+)
 
 @Serializable
 internal data class CreateTableRequest(
