@@ -14,6 +14,7 @@ import io.structify.domain.table.model.ColumnType
 import io.structify.domain.table.model.StringFormat
 import io.structify.domain.table.model.Table
 import io.structify.infrastructure.security.jwtPrincipalOrThrow
+import io.structify.infrastructure.table.readmodel.TableReadModelRepository
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository
 import kotlinx.serialization.Serializable
 import java.util.UUID
@@ -22,8 +23,18 @@ fun Route.tableRoutes(
 	transactionalRunner: TransactionalRunner,
 	tableRepository: TableRepository,
 	versionReadModelRepository: VersionReadModelRepository,
+	tableReadModelRepository: TableReadModelRepository,
 ) {
 	route("/tables") {
+		get {
+			transactionalRunner.transaction(readOnly = true) {
+				val principal = call.jwtPrincipalOrThrow()
+
+				val tables = tableReadModelRepository.findAllByUserId(principal.userId)
+
+				call.respond(HttpStatusCode.OK, tables)
+			}
+		}
 		post {
 			transactionalRunner.transaction {
 				val principal = call.jwtPrincipalOrThrow()

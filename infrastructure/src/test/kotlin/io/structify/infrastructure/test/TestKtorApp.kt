@@ -10,6 +10,7 @@ import io.structify.domain.db.TransactionalRunner
 import io.structify.domain.test.fixtures.db.MockTransactionalRunner
 import io.structify.domain.test.fixtures.table.TableInMemoryRepository
 import io.structify.infrastructure.installApp
+import io.structify.infrastructure.table.readmodel.TableReadModelInMemoryRepository
 import io.structify.infrastructure.table.readmodel.VersionReadModelInMemoryRepository
 import jakarta.inject.Singleton
 
@@ -34,6 +35,11 @@ internal class TestAppModule {
 	@Singleton
 	fun provideVersionReadModelRepository(): VersionReadModelInMemoryRepository =
 		VersionReadModelInMemoryRepository()
+
+	@Provides
+	@Singleton
+	fun provideTableReadModelRepository(): TableReadModelInMemoryRepository =
+		TableReadModelInMemoryRepository()
 }
 
 @Singleton
@@ -44,6 +50,7 @@ internal interface TestAppComponent {
 	fun transactionalRunner(): TransactionalRunner
 	fun mockJwtAuthenticationProvider(): MockJwtAuthenticationProvider
 	fun versionReadModelRepository(): VersionReadModelInMemoryRepository
+	fun tableReadModelRepository(): TableReadModelInMemoryRepository
 }
 
 internal fun ApplicationTestBuilder.setupTestApp(): TestAppComponent {
@@ -55,6 +62,7 @@ internal fun ApplicationTestBuilder.setupTestApp(): TestAppComponent {
 			testAppComponent.transactionalRunner(),
 			testAppComponent.tableRepository(),
 			testAppComponent.versionReadModelRepository(),
+			testAppComponent.tableReadModelRepository(),
 		)
 	}
 	return testAppComponent
