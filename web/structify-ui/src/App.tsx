@@ -5,7 +5,7 @@ import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import AppShell from './shell/AppShell';
 import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
-import TablesView from './views/TablesView';
+import TablesView from "./views/tables/TablesView";
 
 export default function App() {
     return (
