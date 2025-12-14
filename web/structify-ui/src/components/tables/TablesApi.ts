@@ -32,6 +32,8 @@ export interface TablesApi {
     fetchCurrentVersion(tableId: string): Promise<VersionReadModel | null>;
 
     createNewVersion(tableId: string, columns: ColumnDto[]): Promise<void>;
+
+    createTable(name: string, description: string): Promise<string>; // returns newly created table id
 }
 
 export class TablesFetchApi implements TablesApi {
@@ -80,5 +82,22 @@ export class TablesFetchApi implements TablesApi {
         if (!response.ok) {
             throw new Error(`Failed to create new version: ${response.statusText}`);
         }
+    }
+
+    async createTable(name: string, description: string): Promise<string> {
+        const jwt = this.jwtProvider();
+        const response = await fetch('/api/tables', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${jwt}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({name, description})
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to create table: ${response.statusText}`);
+        }
+        const body: { id: string } = await response.json();
+        return body.id;
     }
 }

@@ -163,8 +163,6 @@ const TableDetailView: React.FC = () => {
                 <Typography color="success.main" sx={{mb: 2}}>{saveMessage}</Typography>
             )}
 
-            {/* Removed custom header row; rely on MUI field labels so labels are always above fields, including on small screens. */}
-
             {columns.map((col, idx) => (
                 <Grid container spacing={2} key={idx} sx={{mb: 1}} alignItems="center">
                     <Grid item xs={12} md={3}>
