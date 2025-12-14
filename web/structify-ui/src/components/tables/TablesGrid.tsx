@@ -1,7 +1,8 @@
 import React, {useEffect, useState} from 'react';
-import {Box, Card, CardContent, CircularProgress, Grid, Typography} from '@mui/material';
+import {Box, Card, CardActionArea, CardContent, CircularProgress, Grid, Typography} from '@mui/material';
 import {Table} from "./Table.ts";
 import {TablesApi} from "./TablesApi.ts";
+import {useNavigate} from "react-router-dom";
 
 interface TablesGridProps {
     tablesApi: TablesApi;
@@ -11,6 +12,7 @@ const TablesGrid: React.FC<TablesGridProps> = ({tablesApi}) => {
     const [tables, setTables] = useState<Table[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchTables = async () => {
@@ -46,9 +48,11 @@ const TablesGrid: React.FC<TablesGridProps> = ({tablesApi}) => {
                     {tables.map((table) => (
                         <Grid item xs={12} sm={6} md={4} key={table.id}>
                             <Card>
-                                <CardContent>
-                                    <Typography variant="h6">{table.name}</Typography>
-                                </CardContent>
+                                <CardActionArea onClick={() => navigate(`/tables/${table.id}`)}>
+                                    <CardContent>
+                                        <Typography variant="h6">{table.name}</Typography>
+                                    </CardContent>
+                                </CardActionArea>
                             </Card>
                         </Grid>
                     ))}

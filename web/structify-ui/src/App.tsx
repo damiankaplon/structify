@@ -6,6 +6,7 @@ import '@fontsource/roboto/700.css';
 import AppShell from './shell/AppShell';
 import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
 import TablesView from "./views/tables/TablesView";
+import TableDetailView from "./views/tables/TableDetailView";
 
 export default function App() {
     return (
@@ -15,6 +16,7 @@ export default function App() {
                 <Route path="/" element={<AppShell title="Structify"/>}>
                     <Route index element={<Navigate to="/tables" replace/>}/>
                     <Route path="tables" element={<TablesView/>}/>
+                    <Route path="tables/:tableId" element={<TableDetailView/>}/>
                 </Route>
                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/tables" replace/>}/>
