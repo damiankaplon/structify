@@ -1,14 +1,13 @@
 import React, {useEffect, useState} from 'react';
 import {Box, Card, CardActionArea, CardContent, CircularProgress, Grid, Typography} from '@mui/material';
 import {Table} from "./Table.ts";
-import {TablesApi} from "./TablesApi.ts";
 import {useNavigate} from "react-router-dom";
 
 interface TablesGridProps {
-    tablesApi: TablesApi;
+    tablesProvider: () => Promise<Table[] | Error>;
 }
 
-const TablesGrid: React.FC<TablesGridProps> = ({tablesApi}) => {
+const TablesGrid: React.FC<TablesGridProps> = ({tablesProvider}) => {
     const [tables, setTables] = useState<Table[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -16,17 +15,17 @@ const TablesGrid: React.FC<TablesGridProps> = ({tablesApi}) => {
 
     useEffect(() => {
         const fetchTables = async () => {
-            try {
-                const data = await tablesApi.fetchTables();
-                setTables(data);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'An unknown error occurred');
-            } finally {
-                setLoading(false);
+            const result: Error | Table[] = await tablesProvider();
+            if (result instanceof Error) {
+                setError(result.message);
+            } else {
+                setError(null);
+                setTables(result);
             }
+            setLoading(false);
         };
         void fetchTables();
-    }, [tablesApi]);
+    }, [tablesProvider]);
 
     if (loading) {
         return <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%'}}><CircularProgress/></Box>;
