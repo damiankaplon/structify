@@ -16,6 +16,7 @@ import io.structify.infrastructure.test.setupTestApp
 import org.assertj.core.api.Assertions.assertThat
 import java.util.UUID
 import kotlin.test.Test
+import io.structify.infrastructure.table.readmodel.TableReadModelRepository.Table as TableReadModelTable
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository.Version as VersionReadModel
 
 internal class TableRoutesIntegrationTest {
@@ -181,5 +182,67 @@ internal class TableRoutesIntegrationTest {
 		val versions = response.body<List<VersionReadModel>>()
 		assertThat(versions).hasSize(2)
 		assertThat(versions.map { it.orderNumber }).containsExactlyInAnyOrder(1, 2)
+	}
+
+	@Test
+	fun `should get all tables for current user`() = testApplication {
+		// given
+		val testApp = setupTestApp()
+		val loggedInUserUuid = UUID.randomUUID()
+		testApp.mockJwtAuthenticationProvider().setTestJwtPrincipalSubject(loggedInUserUuid.toString())
+
+		// and two tables for this user in read model
+		testApp.tableReadModelRepository().addTable(
+			loggedInUserUuid,
+			TableReadModelTable(id = UUID.randomUUID().toString(), name = "Users")
+		)
+		testApp.tableReadModelRepository().addTable(
+			loggedInUserUuid,
+			TableReadModelTable(id = UUID.randomUUID().toString(), name = "Orders")
+		)
+
+		// when
+		val response = clientJson.get("/api/tables")
+
+		// then
+		assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+		val tables = response.body<List<TableReadModelTable>>()
+		assertThat(tables).hasSize(2)
+		assertThat(tables.map { it.name }).containsExactlyInAnyOrder("Users", "Orders")
+	}
+
+	@Test
+	fun `should not return tables belonging to other users`() = testApplication {
+		// given
+		val testApp = setupTestApp()
+		val loggedInUserUuid = UUID.randomUUID()
+		val otherUserUuid = UUID.randomUUID()
+		testApp.mockJwtAuthenticationProvider().setTestJwtPrincipalSubject(loggedInUserUuid.toString())
+
+		// and two tables for current user
+		testApp.tableReadModelRepository().addTable(
+			loggedInUserUuid,
+			TableReadModelTable(id = UUID.randomUUID().toString(), name = "Customers")
+		)
+		testApp.tableReadModelRepository().addTable(
+			loggedInUserUuid,
+			TableReadModelTable(id = UUID.randomUUID().toString(), name = "Invoices")
+		)
+
+		// and one table for a different user
+		testApp.tableReadModelRepository().addTable(
+			otherUserUuid,
+			TableReadModelTable(id = UUID.randomUUID().toString(), name = "ShouldNotBeVisible")
+		)
+
+		// when
+		val response = clientJson.get("/api/tables")
+
+		// then
+		assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+		val tables = response.body<List<TableReadModelTable>>()
+		assertThat(tables).hasSize(2)
+		assertThat(tables.map { it.name }).containsExactlyInAnyOrder("Customers", "Invoices")
+		assertThat(tables.map { it.name }).doesNotContain("ShouldNotBeVisible")
 	}
 }

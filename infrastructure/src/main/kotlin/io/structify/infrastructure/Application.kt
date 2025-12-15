@@ -12,6 +12,7 @@ import io.structify.infrastructure.security.NoJwtExceptionHandler
 import io.structify.infrastructure.security.SecuredRouting
 import io.structify.infrastructure.security.installOAuthAuth
 import io.structify.infrastructure.table.api.tableRoutes
+import io.structify.infrastructure.table.readmodel.TableReadModelRepository
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository
 
 fun main(args: Array<String>) {
@@ -28,6 +29,7 @@ fun Application.module() {
 		appComponent.transactionalRunner(),
 		appComponent.tableRepository(),
 		appComponent.versionReadModelRepository(),
+		appComponent.tableReadModelRepository(),
 	)
 }
 
@@ -36,13 +38,14 @@ fun Application.installApp(
 	transactionalRunner: TransactionalRunner,
 	tableRepository: TableRepository,
 	versionReadModelRepository: VersionReadModelRepository,
+	tableReadModelRepository: TableReadModelRepository,
 ) {
 	installSerialization()
 	install(StatusPages) {
 		exception(NoJwtExceptionHandler)
 		exception(NoAuthenticatedSubjectExceptionHandler)
 	}
-	installRouting(securedRouting, transactionalRunner, tableRepository, versionReadModelRepository)
+	installRouting(securedRouting, transactionalRunner, tableRepository, versionReadModelRepository, tableReadModelRepository)
 }
 
 fun Application.installRouting(
@@ -50,6 +53,7 @@ fun Application.installRouting(
 	transactionalRunner: TransactionalRunner,
 	tableRepository: TableRepository,
 	versionReadModelRepository: VersionReadModelRepository,
+	tableReadModelRepository: TableReadModelRepository,
 ) {
 	routing {
 		securedRouting.invoke(this) {
@@ -58,6 +62,7 @@ fun Application.installRouting(
 					transactionalRunner,
 					tableRepository,
 					versionReadModelRepository,
+					tableReadModelRepository,
 				)
 			}
 		}

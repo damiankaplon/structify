@@ -4,7 +4,9 @@ import dagger.Module
 import dagger.Provides
 import io.structify.domain.table.TableRepository
 import io.structify.infrastructure.table.persistence.ExposedTableRepository
+import io.structify.infrastructure.table.readmodel.ExposedTableReadModelRepository
 import io.structify.infrastructure.table.readmodel.ExposedVersionReadModelRepository
+import io.structify.infrastructure.table.readmodel.TableReadModelRepository
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository
 import jakarta.inject.Singleton
 
@@ -21,5 +23,11 @@ class TableRepositoryModule {
 	@Singleton
 	fun provideVersionReadModelRepository(): VersionReadModelRepository {
 		return ExposedVersionReadModelRepository()
+	}
+
+	@Provides
+	@Singleton
+	fun provideTableReadModelRepository(): TableReadModelRepository {
+		return ExposedTableReadModelRepository()
 	}
 }

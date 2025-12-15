@@ -7,6 +7,7 @@ import io.structify.domain.db.TransactionalRunner
 import io.structify.domain.table.TableRepository
 import io.structify.infrastructure.db.dagger.DatabaseModule
 import io.structify.infrastructure.table.dagger.TableRepositoryModule
+import io.structify.infrastructure.table.readmodel.TableReadModelRepository
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository
 import jakarta.inject.Singleton
 import org.jetbrains.exposed.sql.Database
@@ -23,6 +24,7 @@ interface StructifyAppComponent {
     fun transactionalRunner(): TransactionalRunner
     fun tableRepository(): TableRepository
 	fun versionReadModelRepository(): VersionReadModelRepository
+	fun tableReadModelRepository(): TableReadModelRepository
 
     @Component.Builder
     interface Builder {

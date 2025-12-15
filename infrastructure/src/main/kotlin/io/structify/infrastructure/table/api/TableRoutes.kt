@@ -7,6 +7,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import io.ktor.util.reflect.typeInfo
 import io.structify.domain.db.TransactionalRunner
 import io.structify.domain.table.TableRepository
 import io.structify.domain.table.model.ColumnDefinition
@@ -14,7 +15,9 @@ import io.structify.domain.table.model.ColumnType
 import io.structify.domain.table.model.StringFormat
 import io.structify.domain.table.model.Table
 import io.structify.infrastructure.security.jwtPrincipalOrThrow
+import io.structify.infrastructure.table.readmodel.TableReadModelRepository
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository
+import io.structify.infrastructure.table.readmodel.VersionReadModelRepository.Version
 import kotlinx.serialization.Serializable
 import java.util.UUID
 
@@ -22,8 +25,18 @@ fun Route.tableRoutes(
 	transactionalRunner: TransactionalRunner,
 	tableRepository: TableRepository,
 	versionReadModelRepository: VersionReadModelRepository,
+	tableReadModelRepository: TableReadModelRepository,
 ) {
 	route("/tables") {
+		get {
+			transactionalRunner.transaction(readOnly = true) {
+				val principal = call.jwtPrincipalOrThrow()
+
+				val tables = tableReadModelRepository.findAllByUserId(principal.userId)
+
+				call.respond(HttpStatusCode.OK, tables)
+			}
+		}
 		post {
 			transactionalRunner.transaction {
 				val principal = call.jwtPrincipalOrThrow()
@@ -62,9 +75,10 @@ fun Route.tableRoutes(
 				val principal = call.jwtPrincipalOrThrow()
 				val tableId = UUID.fromString(call.parameters["tableId"])
 
-				val version = versionReadModelRepository.findCurrentVersionByTableIdOrThrow(principal.userId, tableId)
+				val version = versionReadModelRepository.findCurrentVersionByTableId(principal.userId, tableId)
 
-				call.respond(HttpStatusCode.OK, version)
+
+				call.respond(HttpStatusCode.OK, version, typeInfo<Version?>())
 			}
 		}
 
