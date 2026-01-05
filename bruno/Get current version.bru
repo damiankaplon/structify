@@ -1,0 +1,32 @@
+meta {
+  name: Get current version
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{base_url}}/tables/:tableId/versions/current
+  body: json
+  auth: inherit
+}
+
+params:path {
+  tableId: d1ffe32f-9d00-4ece-9140-665d312ccb18
+}
+
+body:json {
+  [
+    {
+    "name": "colummn one",
+    "description": "test desc",
+    "type": "STRING",
+    "stringFormat": "DATE", 
+    "optional": false
+  }
+  ]
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

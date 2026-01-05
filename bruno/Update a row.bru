@@ -1,0 +1,30 @@
+meta {
+  name: Update a row
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{base_url}}/tables/:tableId/rows/:rowId
+  body: json
+  auth: inherit
+}
+
+params:path {
+  rowId: 02dddb97-5de9-46c9-b33a-b2ee80ad7c7d
+  tableId: bb0ba131-8f8b-431e-aa86-5c2a540f13fe
+}
+
+body:json {
+  {
+    "cells": [
+      {"columnId": 1, "value": "some value 2"}
+    ]
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

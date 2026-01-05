@@ -1,0 +1,32 @@
+meta {
+  name: Version
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/tables/:tableId/versions
+  body: json
+  auth: inherit
+}
+
+params:path {
+  tableId: bb0ba131-8f8b-431e-aa86-5c2a540f13fe
+}
+
+body:json {
+  [
+    {
+    "name": "colummn one",
+    "description": "test desc",
+    "type": "STRING",
+    "stringFormat": "DATE", 
+    "optional": false
+  }
+  ]
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
