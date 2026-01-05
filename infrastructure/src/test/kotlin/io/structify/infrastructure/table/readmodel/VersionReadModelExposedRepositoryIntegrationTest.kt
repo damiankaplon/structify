@@ -163,11 +163,17 @@ internal class VersionReadModelExposedRepositoryIntegrationTest : DatabaseIntegr
 		// then
 		assertThat(currentVersion.orderNumber).isEqualTo(1)
 		assertThat(currentVersion.columns).hasSize(2)
-		assertThat(currentVersion.columns[0].name).isEqualTo("email")
-		assertThat(currentVersion.columns[0].type.type).isEqualTo("STRING")
-		assertThat(currentVersion.columns[0].type.format).isEqualTo("DATE")
-		assertThat(currentVersion.columns[1].name).isEqualTo("active")
-		assertThat(currentVersion.columns[1].type.type).isEqualTo("NUMBER")
-		assertThat(currentVersion.columns[1].type.format).isNull()
+		assertThat(currentVersion.columns).satisfiesExactlyInAnyOrder(
+			{
+				assertThat(it.name).isEqualTo("email")
+				assertThat(it.type.type).isEqualTo("STRING")
+				assertThat(it.type.format).isEqualTo("DATE")
+			},
+			{
+				assertThat(it.name).isEqualTo("active")
+				assertThat(it.type.type).isEqualTo("NUMBER")
+				assertThat(it.type.format).isNull()
+			}
+		)
 	}
 }

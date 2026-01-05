@@ -56,6 +56,7 @@ class VersionReadModelExposedRepository : VersionReadModelRepository {
 			.where { TableColumnsTable.versionId eq versionId }
 			.map { cRow ->
 				ColumnDefinition(
+					id = cRow[TableColumnsTable.id],
 					name = cRow[TableColumnsTable.name],
 					description = cRow[TableColumnsTable.description],
 					type = ColumnType(

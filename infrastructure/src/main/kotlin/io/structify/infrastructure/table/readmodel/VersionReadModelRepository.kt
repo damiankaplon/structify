@@ -18,6 +18,7 @@ interface VersionReadModelRepository {
 
 	@Serializable
 	data class ColumnDefinition(
+		val id: Long,
 		val name: String,
 		val description: String,
 		val type: ColumnType,
