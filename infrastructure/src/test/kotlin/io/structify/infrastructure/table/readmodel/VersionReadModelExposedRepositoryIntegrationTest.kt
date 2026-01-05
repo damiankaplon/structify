@@ -10,10 +10,10 @@ import org.assertj.core.api.Assertions.assertThat
 import java.util.UUID
 import kotlin.test.Test
 
-internal class ExposedVersionReadModelRepositoryIntegrationTest : DatabaseIntegrationTest() {
+internal class VersionReadModelExposedRepositoryIntegrationTest : DatabaseIntegrationTest() {
 
 	private val tableRepo = ExposedTableRepository()
-	private val versionReadModelRepo = ExposedVersionReadModelRepository()
+	private val versionReadModelRepo = VersionReadModelExposedRepository()
 
 	@Test
 	fun `findAllVersionsByTableId should return all versions for table`() = rollbackTransaction {

@@ -13,7 +13,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import java.util.UUID
 
-class ExposedVersionReadModelRepository : VersionReadModelRepository {
+class VersionReadModelExposedRepository : VersionReadModelRepository {
 
 	override suspend fun findAllVersionsByTableId(userId: UUID, tableId: UUID): Set<Version> {
 		return TableVersionsTable.innerJoin(TablesTable).selectAll()
