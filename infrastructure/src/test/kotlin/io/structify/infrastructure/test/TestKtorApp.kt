@@ -8,8 +8,10 @@ import io.ktor.server.auth.Authentication
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.structify.domain.db.TransactionalRunner
 import io.structify.domain.test.fixtures.db.MockTransactionalRunner
+import io.structify.domain.test.fixtures.row.RowInMemoryRepository
 import io.structify.domain.test.fixtures.table.TableInMemoryRepository
 import io.structify.infrastructure.installApp
+import io.structify.infrastructure.row.readmodel.RowReadModelInMemoryRepository
 import io.structify.infrastructure.table.readmodel.TableReadModelInMemoryRepository
 import io.structify.infrastructure.table.readmodel.VersionReadModelInMemoryRepository
 import jakarta.inject.Singleton
@@ -40,6 +42,14 @@ internal class TestAppModule {
 	@Singleton
 	fun provideTableReadModelRepository(): TableReadModelInMemoryRepository =
 		TableReadModelInMemoryRepository()
+
+	@Provides
+	@Singleton
+	fun provideRowRepository(): RowInMemoryRepository = RowInMemoryRepository()
+
+	@Provides
+	@Singleton
+	fun provideRowReadModelRepository(): RowReadModelInMemoryRepository = RowReadModelInMemoryRepository()
 }
 
 @Singleton
@@ -51,6 +61,8 @@ internal interface TestAppComponent {
 	fun mockJwtAuthenticationProvider(): MockJwtAuthenticationProvider
 	fun versionReadModelRepository(): VersionReadModelInMemoryRepository
 	fun tableReadModelRepository(): TableReadModelInMemoryRepository
+	fun rowRepository(): RowInMemoryRepository
+	fun rowReadModelRepository(): RowReadModelInMemoryRepository
 }
 
 internal fun ApplicationTestBuilder.setupTestApp(): TestAppComponent {
@@ -63,6 +75,8 @@ internal fun ApplicationTestBuilder.setupTestApp(): TestAppComponent {
 			testAppComponent.tableRepository(),
 			testAppComponent.versionReadModelRepository(),
 			testAppComponent.tableReadModelRepository(),
+			testAppComponent.rowRepository(),
+			testAppComponent.rowReadModelRepository()
 		)
 	}
 	return testAppComponent

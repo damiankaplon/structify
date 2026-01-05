@@ -1,8 +1,10 @@
 package io.structify.infrastructure
 
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.structify.domain.db.TransactionalRunner
@@ -51,6 +53,9 @@ fun Application.installApp(
 	install(StatusPages) {
 		exception(NoJwtExceptionHandler)
 		exception(NoAuthenticatedSubjectExceptionHandler)
+		exception<NoSuchElementException> { call, cause ->
+			call.respondText(cause.message ?: "Resource not found", status = HttpStatusCode.NotFound)
+		}
 	}
 	installRouting(securedRouting, transactionalRunner, tableRepository, versionReadModelRepository, tableReadModelRepository, rowRepository, rowReadModelRepository)
 }
