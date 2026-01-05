@@ -25,6 +25,9 @@ import SaveIcon from '@mui/icons-material/Save';
 import {useParams} from 'react-router-dom';
 import {AuthContext} from '../../security/AuthContext';
 import {ColumnDto, TablesFetchApi, VersionReadModel} from '../../components/tables/TablesApi';
+import RowsGrid from '../../components/rows/RowsGrid';
+import {RowsFetchApi} from '../../components/rows/RowsApi';
+import {Row} from '../../components/rows/Row';
 
 const DEFAULT_NEW_COLUMN: ColumnDto = {
     name: '',
@@ -38,6 +41,7 @@ const TableDetailView: React.FC = () => {
     const {tableId} = useParams();
     const auth = useContext(AuthContext);
     const api = useMemo(() => new TablesFetchApi(() => auth.jwt!), [auth.jwt]);
+    const rowsApi = useMemo(() => new RowsFetchApi(() => auth.jwt!), [auth.jwt]);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -135,6 +139,28 @@ const TableDetailView: React.FC = () => {
             setError(e instanceof Error ? e.message : 'Failed to save new version');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const fetchRows = async (): Promise<Row[] | Error> => {
+        if (!tableId) {
+            return [];
+        }
+        try {
+            return await rowsApi.fetchRows(tableId);
+        } catch (e) {
+            return e instanceof Error ? e : new Error('Failed to fetch rows');
+        }
+    };
+
+    const fetchVersion = async (): Promise<VersionReadModel | null | Error> => {
+        if (!tableId) {
+            return null;
+        }
+        try {
+            return await api.fetchCurrentVersion(tableId);
+        } catch (e) {
+            return e instanceof Error ? e : new Error('Failed to fetch version');
         }
     };
 
@@ -269,6 +295,16 @@ const TableDetailView: React.FC = () => {
                     <Button onClick={saveDescription} variant="contained">Save</Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Rows Grid */}
+            {tableId && (
+                <Box sx={{mt: 4}}>
+                    <Typography variant="h5" gutterBottom>
+                        Table Rows
+                    </Typography>
+                    <RowsGrid rowsProvider={fetchRows} versionProvider={fetchVersion}/>
+                </Box>
+            )}
         </Box>
     );
 };

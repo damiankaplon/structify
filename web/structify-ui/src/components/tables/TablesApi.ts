@@ -6,6 +6,7 @@ export interface ColumnTypeReadModel {
 }
 
 export interface ColumnDefinitionReadModel {
+    id: number;
     name: string;
     description: string;
     type: ColumnTypeReadModel;
