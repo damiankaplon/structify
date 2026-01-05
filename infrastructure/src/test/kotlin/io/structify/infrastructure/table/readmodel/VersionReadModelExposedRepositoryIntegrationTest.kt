@@ -10,10 +10,10 @@ import org.assertj.core.api.Assertions.assertThat
 import java.util.UUID
 import kotlin.test.Test
 
-internal class ExposedVersionReadModelRepositoryIntegrationTest : DatabaseIntegrationTest() {
+internal class VersionReadModelExposedRepositoryIntegrationTest : DatabaseIntegrationTest() {
 
 	private val tableRepo = ExposedTableRepository()
-	private val versionReadModelRepo = ExposedVersionReadModelRepository()
+	private val versionReadModelRepo = VersionReadModelExposedRepository()
 
 	@Test
 	fun `findAllVersionsByTableId should return all versions for table`() = rollbackTransaction {
@@ -163,11 +163,17 @@ internal class ExposedVersionReadModelRepositoryIntegrationTest : DatabaseIntegr
 		// then
 		assertThat(currentVersion.orderNumber).isEqualTo(1)
 		assertThat(currentVersion.columns).hasSize(2)
-		assertThat(currentVersion.columns[0].name).isEqualTo("email")
-		assertThat(currentVersion.columns[0].type.type).isEqualTo("STRING")
-		assertThat(currentVersion.columns[0].type.format).isEqualTo("DATE")
-		assertThat(currentVersion.columns[1].name).isEqualTo("active")
-		assertThat(currentVersion.columns[1].type.type).isEqualTo("NUMBER")
-		assertThat(currentVersion.columns[1].type.format).isNull()
+		assertThat(currentVersion.columns).satisfiesExactlyInAnyOrder(
+			{
+				assertThat(it.name).isEqualTo("email")
+				assertThat(it.type.type).isEqualTo("STRING")
+				assertThat(it.type.format).isEqualTo("DATE")
+			},
+			{
+				assertThat(it.name).isEqualTo("active")
+				assertThat(it.type.type).isEqualTo("NUMBER")
+				assertThat(it.type.format).isNull()
+			}
+		)
 	}
 }

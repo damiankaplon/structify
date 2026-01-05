@@ -24,8 +24,4 @@ internal class VersionReadModelInMemoryRepository : VersionReadModelRepository {
 	fun addVersion(userId: UUID, tableId: UUID, version: Version) {
 		versions.getOrPut(userId to tableId) { mutableListOf() }.add(version)
 	}
-
-	fun clear() {
-		versions.clear()
-	}
 }

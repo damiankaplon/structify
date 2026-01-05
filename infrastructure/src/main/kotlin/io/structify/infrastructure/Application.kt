@@ -1,12 +1,17 @@
 package io.structify.infrastructure
 
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.structify.domain.db.TransactionalRunner
+import io.structify.domain.row.RowRepository
 import io.structify.domain.table.TableRepository
+import io.structify.infrastructure.row.api.rowRoutes
+import io.structify.infrastructure.row.readmodel.RowReadModelRepository
 import io.structify.infrastructure.security.NoAuthenticatedSubjectExceptionHandler
 import io.structify.infrastructure.security.NoJwtExceptionHandler
 import io.structify.infrastructure.security.SecuredRouting
@@ -30,6 +35,8 @@ fun Application.module() {
 		appComponent.tableRepository(),
 		appComponent.versionReadModelRepository(),
 		appComponent.tableReadModelRepository(),
+		appComponent.rowRepository(),
+		appComponent.rowReadModelRepository(),
 	)
 }
 
@@ -39,13 +46,18 @@ fun Application.installApp(
 	tableRepository: TableRepository,
 	versionReadModelRepository: VersionReadModelRepository,
 	tableReadModelRepository: TableReadModelRepository,
+	rowRepository: RowRepository,
+	rowReadModelRepository: RowReadModelRepository,
 ) {
 	installSerialization()
 	install(StatusPages) {
 		exception(NoJwtExceptionHandler)
 		exception(NoAuthenticatedSubjectExceptionHandler)
+		exception<NoSuchElementException> { call, cause ->
+			call.respondText(cause.message ?: "Resource not found", status = HttpStatusCode.NotFound)
+		}
 	}
-	installRouting(securedRouting, transactionalRunner, tableRepository, versionReadModelRepository, tableReadModelRepository)
+	installRouting(securedRouting, transactionalRunner, tableRepository, versionReadModelRepository, tableReadModelRepository, rowRepository, rowReadModelRepository)
 }
 
 fun Application.installRouting(
@@ -54,6 +66,8 @@ fun Application.installRouting(
 	tableRepository: TableRepository,
 	versionReadModelRepository: VersionReadModelRepository,
 	tableReadModelRepository: TableReadModelRepository,
+	rowRepository: RowRepository,
+	rowReadModelRepository: RowReadModelRepository,
 ) {
 	routing {
 		securedRouting.invoke(this) {
@@ -63,6 +77,12 @@ fun Application.installRouting(
 					tableRepository,
 					versionReadModelRepository,
 					tableReadModelRepository,
+				)
+				rowRoutes(
+					transactionalRunner,
+					rowRepository,
+					rowReadModelRepository,
+					tableRepository,
 				)
 			}
 		}

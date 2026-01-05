@@ -104,6 +104,7 @@ internal class TableRoutesIntegrationTest {
 				id = UUID.randomUUID().toString(),
 				columns = listOf(
 					ColumnDefinition(
+						id = 1,
 						name = "email",
 						description = "User email",
 						type = ColumnType(type = "STRING", format = null),
@@ -141,6 +142,7 @@ internal class TableRoutesIntegrationTest {
 				id = UUID.randomUUID().toString(),
 				columns = listOf(
 					ColumnDefinition(
+						id = 1,
 						name = "email",
 						description = "User email",
 						type = ColumnType(type = "STRING", format = null),
@@ -158,12 +160,14 @@ internal class TableRoutesIntegrationTest {
 				id = UUID.randomUUID().toString(),
 				columns = listOf(
 					ColumnDefinition(
+						id = 2,
 						name = "email",
 						description = "User email",
 						type = ColumnType(type = "STRING", format = null),
 						optional = false
 					),
 					ColumnDefinition(
+						id = 3,
 						name = "age",
 						description = "User age",
 						type = ColumnType(type = "NUMBER", format = null),

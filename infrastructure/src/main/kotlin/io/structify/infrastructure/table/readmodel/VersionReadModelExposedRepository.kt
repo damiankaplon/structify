@@ -13,7 +13,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import java.util.UUID
 
-class ExposedVersionReadModelRepository : VersionReadModelRepository {
+class VersionReadModelExposedRepository : VersionReadModelRepository {
 
 	override suspend fun findAllVersionsByTableId(userId: UUID, tableId: UUID): Set<Version> {
 		return TableVersionsTable.innerJoin(TablesTable).selectAll()
@@ -56,6 +56,7 @@ class ExposedVersionReadModelRepository : VersionReadModelRepository {
 			.where { TableColumnsTable.versionId eq versionId }
 			.map { cRow ->
 				ColumnDefinition(
+					id = cRow[TableColumnsTable.id],
 					name = cRow[TableColumnsTable.name],
 					description = cRow[TableColumnsTable.description],
 					type = ColumnType(

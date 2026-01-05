@@ -1,0 +1,29 @@
+meta {
+  name: Create a row
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{base_url}}/tables/:tableId/rows
+  body: json
+  auth: inherit
+}
+
+params:path {
+  tableId: bb0ba131-8f8b-431e-aa86-5c2a540f13fe
+}
+
+body:json {
+  {
+    "cells": [
+      {"columnId": 1, "value": "some value"}
+    ]
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

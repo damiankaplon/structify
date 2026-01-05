@@ -1,0 +1,22 @@
+auth {
+  mode: oauth2
+}
+
+auth:oauth2 {
+  grant_type: authorization_code
+  callback_url: {{oauth2_redirect_url}}
+  authorization_url: {{oauth2_auth_url}}
+  access_token_url: {{oauth2_access_token_url}}
+  refresh_token_url: 
+  client_id: {{oauth2_client_id}}
+  client_secret: {{oauth2_secret}}
+  scope: openid
+  state: 
+  pkce: true
+  credentials_placement: basic_auth_header
+  credentials_id: credentials
+  token_placement: header
+  token_header_prefix: Bearer
+  auto_fetch_token: true
+  auto_refresh_token: false
+}
