@@ -16,7 +16,7 @@ class RowCommandHandler(
 	private val rowExtractor: RowExtractor,
 ) {
 
-	suspend fun invoke(cmd: ExtractRowCommand) {
+	suspend fun handle(cmd: ExtractRowCommand) {
 		val userId = currentlyAuthenticatedUserIdProvider()
 		val table = tableRepository.findByIdThrow(userId, cmd.tableId)
 		val version = table.versions.find { it.orderNumber == cmd.versionNumber }

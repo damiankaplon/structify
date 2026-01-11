@@ -4,5 +4,5 @@ import io.structify.domain.table.model.ColumnDefinition
 
 fun interface RowExtractor {
 
-	suspend fun extract(columns: List<ColumnDefinition>, fromContent: String): Row
+	suspend fun extract(columns: List<ColumnDefinition>, content: String): Row
 }

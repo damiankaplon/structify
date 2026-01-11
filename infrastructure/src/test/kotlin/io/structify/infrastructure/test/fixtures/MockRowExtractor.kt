@@ -1,12 +1,16 @@
-package io.structify.infrastructure.row.extractos
+package io.structify.infrastructure.test.fixtures
 
 import io.structify.domain.row.Row
 import io.structify.domain.row.RowExtractor
 import io.structify.domain.table.model.ColumnDefinition
+import java.util.UUID
 
-class OpenAiExtractor : RowExtractor {
+class MockRowExtractor : RowExtractor {
 
 	override suspend fun extract(columns: List<ColumnDefinition>, content: String): Row {
-		TODO("Not yet implemented")
+		return Row(
+			tableId = UUID.randomUUID(),
+			cells = linkedSetOf()
+		)
 	}
 }

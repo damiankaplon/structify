@@ -2,6 +2,7 @@ package io.structify.infrastructure.row.api
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
+import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
@@ -10,7 +11,10 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.structify.domain.db.TransactionalRunner
 import io.structify.domain.row.Cell
+import io.structify.domain.row.ExtractRowCommand
 import io.structify.domain.row.Row
+import io.structify.domain.row.RowCommandHandler
+import io.structify.domain.row.RowExtractor
 import io.structify.domain.row.RowRepository
 import io.structify.domain.table.TableRepository
 import io.structify.infrastructure.row.readmodel.RowReadModelRepository
@@ -23,6 +27,7 @@ fun Route.rowRoutes(
 	rowRepository: RowRepository,
 	rowReadModelRepository: RowReadModelRepository,
 	tableRepository: TableRepository,
+	rowExtractor: RowExtractor,
 ) {
 	route("/tables/{tableId}/rows") {
 		get {
@@ -78,6 +83,32 @@ fun Route.rowRoutes(
 				rowRepository.save(row)
 
 				call.respond(HttpStatusCode.OK)
+			}
+		}
+	}
+
+	route("/tables/{tableId}/versions/{versionOrderNr}/rows") {
+		post {
+			val multipart = call.receiveMultipart()
+			val content = extractTextFromPdf(multipart)
+			transactionalRunner.transaction {
+				val tableId = UUID.fromString(call.pathParameters["tableId"])
+				val versionOrderNr = call.pathParameters["versionOrderNr"]?.toIntOrNull()
+				requireNotNull(versionOrderNr) { "Request does not specify table version number" }
+
+				val command = ExtractRowCommand(
+					tableId = tableId,
+					versionNumber = versionOrderNr,
+					content = content
+				)
+				val commandHandler = RowCommandHandler(
+					tableRepository = tableRepository,
+					rowRepository = rowRepository,
+					currentlyAuthenticatedUserIdProvider = { call.jwtPrincipalOrThrow().userId },
+					rowExtractor = rowExtractor
+				)
+				commandHandler.handle(command)
+				call.respond(HttpStatusCode.Accepted)
 			}
 		}
 	}

@@ -8,6 +8,7 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.structify.domain.db.TransactionalRunner
+import io.structify.domain.row.RowExtractor
 import io.structify.domain.row.RowRepository
 import io.structify.domain.table.TableRepository
 import io.structify.infrastructure.row.api.rowRoutes
@@ -37,6 +38,7 @@ fun Application.module() {
 		appComponent.tableReadModelRepository(),
 		appComponent.rowRepository(),
 		appComponent.rowReadModelRepository(),
+		appComponent.rowExtractor(),
 	)
 }
 
@@ -48,6 +50,7 @@ fun Application.installApp(
 	tableReadModelRepository: TableReadModelRepository,
 	rowRepository: RowRepository,
 	rowReadModelRepository: RowReadModelRepository,
+	rowExtractor: RowExtractor,
 ) {
 	installSerialization()
 	install(StatusPages) {
@@ -57,7 +60,7 @@ fun Application.installApp(
 			call.respondText(cause.message ?: "Resource not found", status = HttpStatusCode.NotFound)
 		}
 	}
-	installRouting(securedRouting, transactionalRunner, tableRepository, versionReadModelRepository, tableReadModelRepository, rowRepository, rowReadModelRepository)
+	installRouting(securedRouting, transactionalRunner, tableRepository, versionReadModelRepository, tableReadModelRepository, rowRepository, rowReadModelRepository, rowExtractor)
 }
 
 fun Application.installRouting(
@@ -68,6 +71,7 @@ fun Application.installRouting(
 	tableReadModelRepository: TableReadModelRepository,
 	rowRepository: RowRepository,
 	rowReadModelRepository: RowReadModelRepository,
+	rowExtractor: RowExtractor,
 ) {
 	routing {
 		securedRouting.invoke(this) {
@@ -83,6 +87,7 @@ fun Application.installRouting(
 					rowRepository,
 					rowReadModelRepository,
 					tableRepository,
+					rowExtractor,
 				)
 			}
 		}
