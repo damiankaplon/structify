@@ -11,6 +11,7 @@ import io.structify.domain.db.TransactionalRunner
 import io.structify.domain.row.RowExtractor
 import io.structify.domain.row.RowRepository
 import io.structify.domain.table.TableRepository
+import io.structify.infrastructure.db.NoEntityFoundExceptionHandler
 import io.structify.infrastructure.row.api.rowRoutes
 import io.structify.infrastructure.row.readmodel.RowReadModelRepository
 import io.structify.infrastructure.security.NoAuthenticatedSubjectExceptionHandler
@@ -59,6 +60,7 @@ fun Application.installApp(
 		exception<NoSuchElementException> { call, cause ->
 			call.respondText(cause.message ?: "Resource not found", status = HttpStatusCode.NotFound)
 		}
+		exception(NoEntityFoundExceptionHandler)
 	}
 	installRouting(securedRouting, transactionalRunner, tableRepository, versionReadModelRepository, tableReadModelRepository, rowRepository, rowReadModelRepository, rowExtractor)
 }
