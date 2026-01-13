@@ -10,7 +10,7 @@ import io.ktor.server.routing.route
 import io.ktor.util.reflect.typeInfo
 import io.structify.domain.db.TransactionalRunner
 import io.structify.domain.table.TableRepository
-import io.structify.domain.table.model.ColumnDefinition
+import io.structify.domain.table.model.Column
 import io.structify.domain.table.model.ColumnType
 import io.structify.domain.table.model.StringFormat
 import io.structify.domain.table.model.Table
@@ -58,11 +58,11 @@ fun Route.tableRoutes(
 			transactionalRunner.transaction {
 				val principal = call.jwtPrincipalOrThrow()
 				val tableId = UUID.fromString(call.parameters["tableId"])
-				val request = call.receive<List<ColumnDto>>()
+				val request = call.receive<List<ColumnDefinitionDto>>()
 
 				val table = tableRepository.findByIdThrow(principal.userId, tableId)
 
-				val columns: List<ColumnDefinition> = request.map(ColumnDto::toDomain)
+				val columns: List<Column.Definition> = request.map(ColumnDefinitionDto::toDomain)
 				table.update(columns)
 				tableRepository.persist(table)
 
@@ -107,7 +107,7 @@ internal data class CreateTableRequest(
 )
 
 @Serializable
-internal data class ColumnDto(
+internal data class ColumnDefinitionDto(
 	val name: String,
 	val description: String,
 	val type: String,
@@ -115,13 +115,13 @@ internal data class ColumnDto(
 	val optional: Boolean,
 ) {
 
-	fun toDomain(): ColumnDefinition {
+	fun toDomain(): Column.Definition {
 		val domainType: ColumnType = when (type.uppercase()) {
 			"STRING" -> ColumnType.StringType(format = stringFormat?.let { StringFormat.valueOf(it) })
 			"NUMBER" -> ColumnType.NumberType
 			else -> error("Unknown column type: $type")
 		}
-		return ColumnDefinition(
+		return Column.Definition(
 			name = name,
 			description = description,
 			type = domainType,

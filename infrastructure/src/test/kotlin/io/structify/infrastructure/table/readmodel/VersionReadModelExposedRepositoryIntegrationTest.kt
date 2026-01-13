@@ -1,6 +1,6 @@
 package io.structify.infrastructure.table.readmodel
 
-import io.structify.domain.table.model.ColumnDefinition
+import io.structify.domain.table.model.Column
 import io.structify.domain.table.model.ColumnType
 import io.structify.domain.table.model.StringFormat
 import io.structify.domain.table.model.Table
@@ -28,7 +28,7 @@ internal class VersionReadModelExposedRepositoryIntegrationTest : DatabaseIntegr
 		).apply {
 			update(
 				listOf(
-					ColumnDefinition(
+					Column.Definition(
 						name = "name",
 						description = "Person name",
 						type = ColumnType.StringType(format = StringFormat.DATE),
@@ -38,13 +38,13 @@ internal class VersionReadModelExposedRepositoryIntegrationTest : DatabaseIntegr
 			)
 			update(
 				listOf(
-					ColumnDefinition(
+					Column.Definition(
 						name = "name",
 						description = "Person name",
 						type = ColumnType.StringType(format = StringFormat.DATE),
 						optional = false
 					),
-					ColumnDefinition(
+					Column.Definition(
 						name = "age",
 						description = "Person age",
 						type = ColumnType.NumberType,
@@ -88,7 +88,7 @@ internal class VersionReadModelExposedRepositoryIntegrationTest : DatabaseIntegr
 		).apply {
 			update(
 				listOf(
-					ColumnDefinition(
+					Column.Definition(
 						name = "title",
 						description = "Product title",
 						type = ColumnType.StringType(format = StringFormat.DATE),
@@ -98,13 +98,13 @@ internal class VersionReadModelExposedRepositoryIntegrationTest : DatabaseIntegr
 			)
 			update(
 				listOf(
-					ColumnDefinition(
+					Column.Definition(
 						name = "title",
 						description = "Product title",
 						type = ColumnType.StringType(format = StringFormat.DATE),
 						optional = false
 					),
-					ColumnDefinition(
+					Column.Definition(
 						name = "price",
 						description = "Product price",
 						type = ColumnType.NumberType,
@@ -139,13 +139,13 @@ internal class VersionReadModelExposedRepositoryIntegrationTest : DatabaseIntegr
 		).apply {
 			update(
 				listOf(
-					ColumnDefinition(
+					Column.Definition(
 						name = "email",
 						description = "User email",
 						type = ColumnType.StringType(format = StringFormat.DATE),
 						optional = false
 					),
-					ColumnDefinition(
+					Column.Definition(
 						name = "active",
 						description = "Is active",
 						type = ColumnType.NumberType,

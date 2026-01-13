@@ -2,7 +2,7 @@ package io.structify.infrastructure.row.persistence
 
 import io.structify.domain.row.Cell
 import io.structify.domain.row.Row
-import io.structify.domain.table.model.ColumnDefinition
+import io.structify.domain.table.model.Column
 import io.structify.domain.table.model.ColumnType
 import io.structify.domain.table.model.Table
 import io.structify.infrastructure.table.persistence.ExposedTableRepository
@@ -24,8 +24,18 @@ internal class ExposedRowRepositoryIntegrationTest : DatabaseIntegrationTest() {
 		val table = Table(id = tableId, userId = userId, name = "Test Table")
 		table.update(
 			listOf(
-				ColumnDefinition(name = "column1", description = "", type = ColumnType.StringType(), optional = false),
-				ColumnDefinition(name = "column2", description = "", type = ColumnType.StringType(), optional = false)
+				Column.Definition(
+					name = "column1",
+					description = "",
+					type = ColumnType.StringType(),
+					optional = false
+				),
+				Column.Definition(
+					name = "column2",
+					description = "",
+					type = ColumnType.StringType(),
+					optional = false
+				)
 			)
 		)
 		tableRepo.persist(table)
@@ -60,7 +70,12 @@ internal class ExposedRowRepositoryIntegrationTest : DatabaseIntegrationTest() {
 		val table = Table(id = tableId, userId = userId, name = "Test Table")
 		table.update(
 			listOf(
-				ColumnDefinition(name = "column1", description = "", type = ColumnType.StringType(), optional = false),
+				Column.Definition(
+					name = "column1",
+					description = "",
+					type = ColumnType.StringType(),
+					optional = false
+				),
 			)
 		)
 		tableRepo.persist(table)

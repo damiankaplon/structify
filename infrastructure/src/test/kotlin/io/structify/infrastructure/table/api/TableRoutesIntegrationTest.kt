@@ -70,7 +70,7 @@ internal class TableRoutesIntegrationTest {
 			contentType(ContentType.Application.Json)
 			setBody(
 				listOf(
-					ColumnDto(
+					ColumnDefinitionDto(
 						name = "email",
 						description = "User email",
 						type = "STRING",
@@ -86,7 +86,7 @@ internal class TableRoutesIntegrationTest {
 		val updatedTable = testApp.tableRepository().findAll().first()
 		assertThat(updatedTable.versions).hasSize(1)
 		assertThat(updatedTable.versions.first().columns).hasSize(1)
-		assertThat(updatedTable.versions.first().columns.first().name).isEqualTo("email")
+		assertThat(updatedTable.versions.first().columns.first().definition.name).isEqualTo("email")
 	}
 
 	@Test

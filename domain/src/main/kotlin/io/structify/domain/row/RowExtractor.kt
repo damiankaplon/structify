@@ -1,8 +1,8 @@
 package io.structify.domain.row
 
-import io.structify.domain.table.model.ColumnDefinition
+import io.structify.domain.table.model.Column
 
 fun interface RowExtractor {
 
-	suspend fun extract(columns: List<ColumnDefinition>, content: String): Set<Cell>
+	suspend fun extract(columns: List<Column>, content: String): Set<Cell>
 }

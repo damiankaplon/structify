@@ -15,7 +15,7 @@ import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
 import io.structify.domain.row.Cell
 import io.structify.domain.row.Row
-import io.structify.domain.table.model.ColumnDefinition
+import io.structify.domain.table.model.Column
 import io.structify.domain.table.model.ColumnType
 import io.structify.domain.table.model.Table
 import io.structify.infrastructure.kotlinx.serialization.toKotlinx
@@ -42,7 +42,7 @@ internal class RowRoutesIntegrationTest {
 			userId = loggedInUserUuid,
 			name = "Test table"
 		)
-		table.update(listOf(ColumnDefinition(id = columnDefinitionId, name = "email", description = "", type = ColumnType.StringType(), optional = false)))
+		table.update(listOf(Column.Definition(name = "email", description = "", type = ColumnType.StringType(), optional = false)))
 		testApp.tableRepository().persist(table)
 
 		// when
@@ -82,7 +82,7 @@ internal class RowRoutesIntegrationTest {
 			userId = loggedInUserUuid,
 			name = "Test table"
 		)
-		table.update(listOf(ColumnDefinition(id = columnDefinitionId, name = "email", description = "", type = ColumnType.StringType(), optional = false)))
+		table.update(listOf(Column.Definition(name = "email", description = "", type = ColumnType.StringType(), optional = false)))
 		testApp.tableRepository().persist(table)
 
 		val rowId = UUID.randomUUID()
@@ -199,7 +199,12 @@ internal class RowRoutesIntegrationTest {
 		val columnDefinitionId = UUID.randomUUID()
 		table.update(
 			listOf(
-				ColumnDefinition(id = columnDefinitionId, name = "Name", description = "Person's name", type = ColumnType.StringType(), optional = false)
+				Column.Definition(
+					name = "Name",
+					description = "Person's name",
+					type = ColumnType.StringType(),
+					optional = false
+				),
 			)
 		)
 		testApp.tableRepository().persist(table)

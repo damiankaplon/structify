@@ -2,7 +2,7 @@ package io.structify.infrastructure.table.persistence
 
 import io.structify.domain.db.reflection.setPrivateProperty
 import io.structify.domain.table.TableRepository
-import io.structify.domain.table.model.ColumnDefinition
+import io.structify.domain.table.model.Column
 import io.structify.domain.table.model.ColumnType
 import io.structify.domain.table.model.StringFormat
 import io.structify.domain.table.model.Table
@@ -41,7 +41,7 @@ class ExposedTableRepository : TableRepository {
 				}
 			}
 			VersionColumnTable.deleteWhere {
-				val versionColumnIds = version.columns.map(ColumnDefinition::id)
+				val versionColumnIds = version.columns.map(Column::id)
 				(VersionColumnTable.versionId eq version.id) and (VersionColumnTable.columnDefinitionId notInList versionColumnIds)
 			}
 		}
@@ -127,13 +127,13 @@ class ExposedTableRepository : TableRepository {
 		this[TableVersionsTable.orderNumber] = version.orderNumber
 	}
 
-	private fun UpdateBuilder<*>.updateWith(column: ColumnDefinition) {
+	private fun UpdateBuilder<*>.updateWith(column: Column) {
 		this[TableColumnsTable.id] = column.id
-		this[TableColumnsTable.name] = column.name
-		this[TableColumnsTable.description] = column.description
-		this[TableColumnsTable.typeName] = toTypeName(column.type)
-		this[TableColumnsTable.stringFormat] = toStringFormat(column.type)
-		this[TableColumnsTable.optional] = column.optional
+		this[TableColumnsTable.name] = column.definition.name
+		this[TableColumnsTable.description] = column.definition.description
+		this[TableColumnsTable.typeName] = toTypeName(column.definition.type)
+		this[TableColumnsTable.stringFormat] = toStringFormat(column.definition.type)
+		this[TableColumnsTable.optional] = column.definition.optional
 	}
 
 	private fun toTypeName(type: ColumnType): String = when (type) {
@@ -146,17 +146,19 @@ class ExposedTableRepository : TableRepository {
 		is ColumnType.NumberType -> null
 	}
 
-	private fun fetchColumns(versionId: UUID): List<ColumnDefinition> {
+	private fun fetchColumns(versionId: UUID): List<Column> {
 		return TableColumnsTable.join(VersionColumnTable, JoinType.INNER, VersionColumnTable.columnDefinitionId, TableColumnsTable.id)
 			.selectAll()
 			.where { VersionColumnTable.versionId eq versionId }
 			.map { row ->
-				ColumnDefinition(
+				Column(
 					id = row[TableColumnsTable.id],
-					name = row[TableColumnsTable.name],
-					description = row[TableColumnsTable.description],
-					type = fromDbType(row[TableColumnsTable.typeName], row[TableColumnsTable.stringFormat]),
-					optional = row[TableColumnsTable.optional]
+					definition = Column.Definition(
+						name = row[TableColumnsTable.name],
+						description = row[TableColumnsTable.description],
+						type = fromDbType(row[TableColumnsTable.typeName], row[TableColumnsTable.stringFormat]),
+						optional = row[TableColumnsTable.optional]
+					),
 				)
 			}
 	}

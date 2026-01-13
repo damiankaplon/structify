@@ -18,7 +18,7 @@ internal class TableTest {
 		)
 		table.update(
 			listOf(
-				ColumnDefinition(
+				Column.Definition(
 					name = "name",
 					description = "Person name",
 					type = ColumnType.StringType(),
@@ -30,7 +30,7 @@ internal class TableTest {
 		// when
 		table.update(
 			listOf(
-				ColumnDefinition(
+				Column.Definition(
 					name = "name 2",
 					description = "Person name 2",
 					type = ColumnType.StringType(StringFormat.DATE),
@@ -42,7 +42,7 @@ internal class TableTest {
 		// then
 		val version = table.getCurrentVersion()
 		assertThat(version.orderNumber).isEqualTo(2)
-		assertThat(version.columns).satisfiesExactlyInAnyOrder(
+		assertThat(version.columns.map(Column::definition)).satisfiesExactlyInAnyOrder(
 			{
 				assertThat(it.name).isEqualTo("name 2")
 				assertThat(it.description).isEqualTo("Person name 2")
@@ -64,7 +64,7 @@ internal class TableTest {
 		)
 		table.update(
 			listOf(
-				ColumnDefinition(
+				Column.Definition(
 					name = "birth date",
 					description = "Persons birth date",
 					type = ColumnType.StringType(StringFormat.DATE),
@@ -75,7 +75,7 @@ internal class TableTest {
 		val firstVersion = table.getCurrentVersion()
 		table.update(
 			listOf(
-				ColumnDefinition(
+				Column.Definition(
 					name = "name",
 					description = "Person name",
 					type = ColumnType.StringType(),
@@ -87,13 +87,13 @@ internal class TableTest {
 		// when
 		table.update(
 			listOf(
-				ColumnDefinition(
+				Column.Definition(
 					name = "name",
 					description = "Person name",
 					type = ColumnType.StringType(),
 					optional = false
 				),
-				ColumnDefinition(
+				Column.Definition(
 					name = "birth date",
 					description = "Persons birth date",
 					type = ColumnType.StringType(StringFormat.DATE),
@@ -109,10 +109,14 @@ internal class TableTest {
 				assertThat(it).isEqualTo(firstVersion.columns.first())
 			},
 			{
-				assertThat(it.name).isEqualTo("name")
-				assertThat(it.description).isEqualTo("Person name")
-				assertThat(it.type).isEqualTo(ColumnType.StringType())
-				assertThat(it.optional).isFalse()
+				assertThat(it.definition).isEqualTo(
+					Column.Definition(
+						name = "name",
+						description = "Person name",
+						type = ColumnType.StringType(),
+						optional = false
+					)
+				)
 			}
 		)
 	}

@@ -4,28 +4,27 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import java.util.UUID
 import java.util.stream.Stream
 
-internal class ColumnDefinitionTest {
+internal class ColumnTest {
 
 	@ParameterizedTest
 	@MethodSource("sameColumns")
 	fun `should consider columns equal`(
-		column1: ColumnDefinition,
-		column2: ColumnDefinition,
+		column1: Column.Definition,
+		column2: Column.Definition,
 	) {
-		val result = column1.sameDefinitionAs(column2)
+		val result = column1 == column2
 		assertThat(result).isTrue
 	}
 
 	@ParameterizedTest
 	@MethodSource("differentColumns")
 	fun `should not consider columns equal`(
-		column1: ColumnDefinition,
-		column2: ColumnDefinition,
+		column1: Column.Definition,
+		column2: Column.Definition,
 	) {
-		val result = column1.sameDefinitionAs(column2)
+		val result = column1 == column2
 		assertThat(result).isFalse
 	}
 
@@ -35,13 +34,13 @@ internal class ColumnDefinitionTest {
 		fun sameColumns(): Stream<Arguments> {
 			return listOf(
 				Arguments.of(
-					ColumnDefinition(
+					Column.Definition(
 						name = "name",
 						description = "description",
 						type = ColumnType.StringType(StringFormat.DATE),
 						optional = false
 					),
-					ColumnDefinition(
+					Column.Definition(
 						name = "name",
 						description = "description",
 						type = ColumnType.StringType(StringFormat.DATE),
@@ -49,15 +48,13 @@ internal class ColumnDefinitionTest {
 					)
 				),
 				Arguments.of(
-					ColumnDefinition(
-						id = UUID.randomUUID(),
+					Column.Definition(
 						name = "name",
 						description = "description",
 						type = ColumnType.StringType(),
 						optional = false
 					),
-					ColumnDefinition(
-						id = UUID.randomUUID(),
+					Column.Definition(
 						name = "name",
 						description = "description",
 						type = ColumnType.StringType(),
@@ -71,13 +68,13 @@ internal class ColumnDefinitionTest {
 		fun differentColumns(): Stream<Arguments> {
 			return listOf(
 				Arguments.of(
-					ColumnDefinition(
+					Column.Definition(
 						name = "name1",
 						description = "description",
 						type = ColumnType.StringType(),
 						optional = false
 					),
-					ColumnDefinition(
+					Column.Definition(
 						name = "name",
 						description = "description",
 						type = ColumnType.StringType(),
@@ -85,13 +82,13 @@ internal class ColumnDefinitionTest {
 					)
 				),
 				Arguments.of(
-					ColumnDefinition(
+					Column.Definition(
 						name = "name",
 						description = "description1",
 						type = ColumnType.StringType(),
 						optional = false
 					),
-					ColumnDefinition(
+					Column.Definition(
 						name = "name",
 						description = "description",
 						type = ColumnType.StringType(),
@@ -99,13 +96,13 @@ internal class ColumnDefinitionTest {
 					)
 				),
 				Arguments.of(
-					ColumnDefinition(
+					Column.Definition(
 						name = "name",
 						description = "description",
 						type = ColumnType.StringType(StringFormat.DATE),
 						optional = false
 					),
-					ColumnDefinition(
+					Column.Definition(
 						name = "name",
 						description = "description",
 						type = ColumnType.StringType(),
@@ -113,13 +110,13 @@ internal class ColumnDefinitionTest {
 					)
 				),
 				Arguments.of(
-					ColumnDefinition(
+					Column.Definition(
 						name = "name",
 						description = "description",
 						type = ColumnType.NumberType,
 						optional = false
 					),
-					ColumnDefinition(
+					Column.Definition(
 						name = "name",
 						description = "description",
 						type = ColumnType.StringType(),
@@ -127,13 +124,13 @@ internal class ColumnDefinitionTest {
 					)
 				),
 				Arguments.of(
-					ColumnDefinition(
+					Column.Definition(
 						name = "name",
 						description = "description",
 						type = ColumnType.NumberType,
 						optional = false
 					),
-					ColumnDefinition(
+					Column.Definition(
 						name = "name",
 						description = "description",
 						type = ColumnType.NumberType,
