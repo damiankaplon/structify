@@ -1,8 +1,6 @@
 val kotlin_version: String by project
 val ktor_version: String by project
-val logback_version: String by project
-val postgresql_version: String = "42.7.4"
-val exposed_version: String = "0.58.0"
+val exposed_version: String = "0.61.0"
 
 plugins {
     kotlin("jvm")
@@ -10,7 +8,7 @@ plugins {
     kotlin("plugin.serialization")
     kotlin("kapt") version "2.1.20"
     id("io.ktor.plugin") version "3.0.1"
-    id("org.flywaydb.flyway") version "11.1.1"
+    id("org.flywaydb.flyway") version "11.20.1"
 }
 
 group = "io.structify"
@@ -18,9 +16,8 @@ group = "io.structify"
 
 buildscript {
     dependencies {
-        classpath("org.flywaydb:flyway-database-postgresql:11.1.1")
-        val postgresql_version: String by project
-        classpath("org.postgresql:postgresql:42.7.4")
+        classpath("org.flywaydb:flyway-database-postgresql:11.20.1")
+        classpath("org.postgresql:postgresql:42.7.8")
     }
 }
 
@@ -47,7 +44,7 @@ dependencies {
     implementation("io.ktor:ktor-server-status-pages")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.postgresql:postgresql:$postgresql_version")
+    implementation("org.postgresql:postgresql:42.7.8")
     implementation("org.jetbrains.exposed:exposed-core:$exposed_version")
     implementation("org.jetbrains.exposed:exposed-dao:$exposed_version")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
@@ -55,10 +52,9 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-json:$exposed_version")
     implementation("com.zaxxer:HikariCP:6.2.1")
     implementation("ch.qos.logback:logback-classic:1.5.16")
-    implementation("org.apache.kafka:kafka-clients:3.9.0")
     implementation("com.google.dagger:dagger:2.56.2")
     kapt("com.google.dagger:dagger-compiler:2.56.2")
-
+    implementation("org.apache.pdfbox:pdfbox:3.0.2")
 
     testImplementation(testFixtures(project(":domain")))
     testImplementation("io.ktor:ktor-server-test-host-jvm")

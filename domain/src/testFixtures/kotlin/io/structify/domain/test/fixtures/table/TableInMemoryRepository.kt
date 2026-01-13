@@ -21,5 +21,10 @@ class TableInMemoryRepository : TableRepository {
 		return findById(userId, tableId) ?: throw NoSuchElementException("Could not find table with id: $tableId, user id: $userId")
 	}
 
+	override suspend fun findByVersionIdOrThrow(versionId: UUID): Table {
+		return tables.values.firstOrNull { it.versions.any { version -> version.id == versionId } }
+			?: error("Could not find table with version id: $versionId")
+	}
+
 	fun findAll(): List<Table> = tables.values.toList()
 }

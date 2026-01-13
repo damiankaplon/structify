@@ -1,6 +1,6 @@
 package io.structify.infrastructure.table.persistence
 
-import io.structify.domain.table.model.ColumnDefinition
+import io.structify.domain.table.model.Column
 import io.structify.domain.table.model.ColumnType
 import io.structify.domain.table.model.StringFormat
 import io.structify.domain.table.model.Table
@@ -27,7 +27,7 @@ internal class ExposedTableRepositoryIntegrationTest : DatabaseIntegrationTest()
 		).apply {
 			update(
 				listOf(
-					ColumnDefinition(
+					Column.Definition(
 						name = "name",
 						description = "Person name",
 						type = ColumnType.StringType(format = StringFormat.DATE),
@@ -59,10 +59,10 @@ internal class ExposedTableRepositoryIntegrationTest : DatabaseIntegrationTest()
 
 		// columns
 		assertThat(loadedV1.columns).hasSize(1)
-		val nameCol = loadedV1.columns.first { it.name == "name" }
-		assertThat(nameCol.description).isEqualTo("Person name")
-		assertThat(nameCol.type).isEqualTo(ColumnType.StringType(format = StringFormat.DATE))
-		assertThat(nameCol.optional).isFalse()
+		val nameCol = loadedV1.columns.first { it.definition.name == "name" }
+		assertThat(nameCol.definition.description).isEqualTo("Person name")
+		assertThat(nameCol.definition.type).isEqualTo(ColumnType.StringType(format = StringFormat.DATE))
+		assertThat(nameCol.definition.optional).isFalse()
 	}
 
 	@Test
@@ -71,38 +71,36 @@ internal class ExposedTableRepositoryIntegrationTest : DatabaseIntegrationTest()
 		val userId = UUID.randomUUID()
 		val tableId = UUID.randomUUID()
 
+		val columnDefintion1 = Column.Definition(
+			name = "name", // same pk for columns (versionId+name)
+			description = "name v2",
+			type = ColumnType.StringType(format = StringFormat.DATE),
+			optional = true
+		)
 		val table = Table(
 			id = tableId,
 			userId = userId,
 			name = "People",
 		).apply {
-			update(
-				listOf(
-					ColumnDefinition(
-						name = "name", // same pk for columns (versionId+name)
-						description = "name v2",
-						type = ColumnType.StringType(format = StringFormat.DATE),
-						optional = true
-					),
-				),
-			)
+			update(listOf(columnDefintion1))
 			repo.persist(this)
 		}
 
+		val columnDefinition2 = Column.Definition(
+			name = "age",
+			description = "age added",
+			type = ColumnType.NumberType,
+			optional = false
+		)
 		table.update(
 			listOf(
-				ColumnDefinition(
+				Column.Definition(
 					name = "name",
 					description = "name v2",
 					type = ColumnType.StringType(format = StringFormat.DATE),
 					optional = true
 				),
-				ColumnDefinition(
-					name = "age",
-					description = "age added",
-					type = ColumnType.NumberType,
-					optional = false
-				)
+				columnDefinition2
 			),
 		)
 		repo.persist(table)
@@ -117,31 +115,12 @@ internal class ExposedTableRepositoryIntegrationTest : DatabaseIntegrationTest()
 		assertThat(found.versions).hasSize(2)
 		val firstVersion = found.versions.minBy(Version::orderNumber)
 		assertThat(firstVersion.orderNumber).isEqualTo(1)
-		assertThat(firstVersion.columns).containsExactlyInAnyOrder(
-			ColumnDefinition(
-				name = "name", // same pk for columns (versionId+name)
-				description = "name v2",
-				type = ColumnType.StringType(format = StringFormat.DATE),
-				optional = true
-			),
-		)
+		assertThat(firstVersion.columns.map(Column::definition)).containsExactlyInAnyOrder(columnDefintion1)
+		val firstVersionColumns = firstVersion.columns
 
 		val secondVersion = found.versions.maxBy(Version::orderNumber)
 		assertThat(secondVersion.orderNumber).isEqualTo(2)
-		assertThat(secondVersion.columns).containsExactlyInAnyOrder(
-			ColumnDefinition(
-				name = "name",
-				description = "name v2",
-				type = ColumnType.StringType(format = StringFormat.DATE),
-				optional = true
-			),
-			ColumnDefinition(
-				name = "age",
-				description = "age added",
-				type = ColumnType.NumberType,
-				optional = false
-			)
-
-		)
+		assertThat(secondVersion.columns).containsAll(firstVersionColumns)
+		assertThat(secondVersion.columns.map(Column::definition)).containsExactlyInAnyOrder(columnDefintion1, columnDefinition2)
 	}
 }

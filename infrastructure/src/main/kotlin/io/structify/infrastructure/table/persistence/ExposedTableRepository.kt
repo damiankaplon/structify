@@ -2,12 +2,13 @@ package io.structify.infrastructure.table.persistence
 
 import io.structify.domain.db.reflection.setPrivateProperty
 import io.structify.domain.table.TableRepository
-import io.structify.domain.table.model.ColumnDefinition
+import io.structify.domain.table.model.Column
 import io.structify.domain.table.model.ColumnType
 import io.structify.domain.table.model.StringFormat
 import io.structify.domain.table.model.Table
 import io.structify.domain.table.model.Version
 import io.structify.infrastructure.db.NoEntityFoundException
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.notInList
 import org.jetbrains.exposed.sql.and
@@ -29,13 +30,21 @@ class ExposedTableRepository : TableRepository {
 				row.updateWith(table.id, version)
 			}
 			version.columns.forEach { column ->
-				TableColumnsTable.upsert(TableColumnsTable.versionId, TableColumnsTable.name) { row ->
-					row.updateWith(version.id, column)
+				TableColumnsTable.upsert(TableColumnsTable.id) { row ->
+					row.updateWith(column)
 				}
 			}
-			version.removeStaleColumnDefinitions()
+			version.columns.forEach { column ->
+				VersionColumnTable.upsert(VersionColumnTable.versionId, VersionColumnTable.columnDefinitionId) { row ->
+					row[VersionColumnTable.versionId] = version.id
+					row[VersionColumnTable.columnDefinitionId] = column.id
+				}
+			}
+			VersionColumnTable.deleteWhere {
+				val versionColumnIds = version.columns.map(Column::id)
+				(VersionColumnTable.versionId eq version.id) and (VersionColumnTable.columnDefinitionId notInList versionColumnIds)
+			}
 		}
-		table.removeStaleVersions()
 		return table
 	}
 
@@ -72,6 +81,34 @@ class ExposedTableRepository : TableRepository {
 			?: throw NoEntityFoundException("Could not find table of user id: $userId and table id: $tableId")
 	}
 
+	override suspend fun findByVersionIdOrThrow(versionId: UUID): Table {
+		val table = TablesTable.join(TableVersionsTable, JoinType.LEFT, TableVersionsTable.tableId, TablesTable.id)
+			.select(TablesTable.columns)
+			.where { (TableVersionsTable.id eq versionId) }
+			.mapTo(linkedSetOf()) { row ->
+				Table(
+					id = row[TablesTable.id],
+					userId = row[TablesTable.userId],
+					name = row[TablesTable.name],
+				)
+			}.singleOrNull() ?: throw NoEntityFoundException("Could not find table of version id: $versionId")
+
+		val versions = TableVersionsTable.selectAll()
+			.where { TableVersionsTable.tableId eq table.id }
+			.toList()
+			.mapTo(linkedSetOf()) { row ->
+				val columns = fetchColumns(row[TableVersionsTable.id])
+				Version(
+					id = row[TableVersionsTable.id],
+					orderNumber = row[TableVersionsTable.orderNumber],
+					columns = columns,
+				)
+			}
+		setPrivateProperty(table, table::versions.name, versions)
+
+		return table
+	}
+
 	private fun fromDbType(typeName: String, format: String?): ColumnType = when (typeName) {
 		"STRING" -> ColumnType.StringType(format = format?.let { StringFormat.valueOf(it) })
 		"NUMBER" -> ColumnType.NumberType
@@ -90,13 +127,13 @@ class ExposedTableRepository : TableRepository {
 		this[TableVersionsTable.orderNumber] = version.orderNumber
 	}
 
-	private fun UpdateBuilder<*>.updateWith(versionId: UUID, column: ColumnDefinition) {
-		this[TableColumnsTable.versionId] = versionId
-		this[TableColumnsTable.name] = column.name
-		this[TableColumnsTable.description] = column.description
-		this[TableColumnsTable.typeName] = toTypeName(column.type)
-		this[TableColumnsTable.stringFormat] = toStringFormat(column.type)
-		this[TableColumnsTable.optional] = column.optional
+	private fun UpdateBuilder<*>.updateWith(column: Column) {
+		this[TableColumnsTable.id] = column.id
+		this[TableColumnsTable.name] = column.definition.name
+		this[TableColumnsTable.description] = column.definition.description
+		this[TableColumnsTable.typeName] = toTypeName(column.definition.type)
+		this[TableColumnsTable.stringFormat] = toStringFormat(column.definition.type)
+		this[TableColumnsTable.optional] = column.definition.optional
 	}
 
 	private fun toTypeName(type: ColumnType): String = when (type) {
@@ -109,31 +146,19 @@ class ExposedTableRepository : TableRepository {
 		is ColumnType.NumberType -> null
 	}
 
-	private fun Table.removeStaleVersions() {
-		val tableId = this.id
-		val versionIds = this.versions.map(Version::id)
-		TableVersionsTable.deleteWhere {
-			(TableVersionsTable.tableId eq tableId) and (TableVersionsTable.id notInList versionIds)
-		}
-	}
-
-	private fun Version.removeStaleColumnDefinitions() {
-		val versionId = this.id
-		val columnNames = this.columns.map(ColumnDefinition::name)
-		TableColumnsTable.deleteWhere {
-			(TableColumnsTable.versionId eq versionId) and (TableColumnsTable.name notInList columnNames)
-		}
-	}
-
-	private fun fetchColumns(versionId: UUID): List<ColumnDefinition> {
-		return TableColumnsTable.selectAll()
-			.where { TableColumnsTable.versionId eq versionId }
+	private fun fetchColumns(versionId: UUID): List<Column> {
+		return TableColumnsTable.join(VersionColumnTable, JoinType.INNER, VersionColumnTable.columnDefinitionId, TableColumnsTable.id)
+			.selectAll()
+			.where { VersionColumnTable.versionId eq versionId }
 			.map { row ->
-				ColumnDefinition(
-					name = row[TableColumnsTable.name],
-					description = row[TableColumnsTable.description],
-					type = fromDbType(row[TableColumnsTable.typeName], row[TableColumnsTable.stringFormat]),
-					optional = row[TableColumnsTable.optional]
+				Column(
+					id = row[TableColumnsTable.id],
+					definition = Column.Definition(
+						name = row[TableColumnsTable.name],
+						description = row[TableColumnsTable.description],
+						type = fromDbType(row[TableColumnsTable.typeName], row[TableColumnsTable.stringFormat]),
+						optional = row[TableColumnsTable.optional]
+					),
 				)
 			}
 	}

@@ -4,6 +4,6 @@ import java.util.UUID
 
 data class Version(
 	val id: UUID = UUID.randomUUID(),
-    val columns: List<ColumnDefinition>,
+	val columns: List<Column>,
 	val orderNumber: Int,
 )

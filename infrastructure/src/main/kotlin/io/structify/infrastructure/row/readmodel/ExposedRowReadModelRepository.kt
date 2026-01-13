@@ -4,14 +4,19 @@ import io.structify.infrastructure.row.persistence.CellsTable
 import io.structify.infrastructure.row.persistence.RowsTable
 import io.structify.infrastructure.row.readmodel.RowReadModelRepository.Cell
 import io.structify.infrastructure.row.readmodel.RowReadModelRepository.Row
+import io.structify.infrastructure.table.persistence.TableVersionsTable
+import io.structify.infrastructure.table.persistence.TablesTable
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.selectAll
 import java.util.UUID
 
 class ExposedRowReadModelRepository : RowReadModelRepository {
 
 	override suspend fun findAllByTableId(tableId: UUID): Set<Row> {
-		val rowIds = RowsTable.selectAll()
-			.where { RowsTable.tableId eq tableId }
+		val rowIds = RowsTable.join(TableVersionsTable, joinType = JoinType.INNER, onColumn = RowsTable.versionId, otherColumn = TableVersionsTable.id)
+			.join(TablesTable, joinType = JoinType.INNER, onColumn = TablesTable.id, otherColumn = TableVersionsTable.tableId)
+			.selectAll()
+			.where { TablesTable.id eq tableId }
 			.map { it[RowsTable.id] }
 
 		return rowIds.mapTo(linkedSetOf()) { rowId ->
@@ -19,7 +24,7 @@ class ExposedRowReadModelRepository : RowReadModelRepository {
 				.where { CellsTable.rowId eq rowId }
 				.mapTo(linkedSetOf()) { row ->
 					Cell(
-						columnId = row[CellsTable.columnId],
+						columnDefinitionId = row[CellsTable.columnDefinitionId].toString(),
 						value = row[CellsTable.value],
 					)
 				}

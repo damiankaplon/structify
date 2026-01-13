@@ -15,7 +15,7 @@ interface RowReadModelRepository {
 
 	@Serializable
 	data class Cell(
-		val columnId: Int,
+		val columnDefinitionId: String,
 		val value: String,
 	)
 }

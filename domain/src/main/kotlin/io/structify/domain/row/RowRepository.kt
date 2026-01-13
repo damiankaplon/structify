@@ -5,5 +5,6 @@ import java.util.UUID
 interface RowRepository {
 
 	suspend fun save(row: Row): Row
-	suspend fun findByTableId(tableId: UUID): Set<Row>
+	suspend fun findById(id: UUID): Row?
+	suspend fun findByIdOrThrow(id: UUID): Row
 }

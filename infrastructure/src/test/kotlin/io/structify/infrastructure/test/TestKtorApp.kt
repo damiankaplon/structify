@@ -11,6 +11,7 @@ import io.structify.domain.test.fixtures.db.MockTransactionalRunner
 import io.structify.domain.test.fixtures.row.RowInMemoryRepository
 import io.structify.domain.test.fixtures.table.TableInMemoryRepository
 import io.structify.infrastructure.installApp
+import io.structify.infrastructure.row.extractors.MockRowExtractor
 import io.structify.infrastructure.row.readmodel.RowReadModelInMemoryRepository
 import io.structify.infrastructure.table.readmodel.TableReadModelInMemoryRepository
 import io.structify.infrastructure.table.readmodel.VersionReadModelInMemoryRepository
@@ -50,6 +51,10 @@ internal class TestAppModule {
 	@Provides
 	@Singleton
 	fun provideRowReadModelRepository(): RowReadModelInMemoryRepository = RowReadModelInMemoryRepository()
+
+	@Provides
+	@Singleton
+	fun provideRowExtractor(): MockRowExtractor = MockRowExtractor()
 }
 
 @Singleton
@@ -63,6 +68,7 @@ internal interface TestAppComponent {
 	fun tableReadModelRepository(): TableReadModelInMemoryRepository
 	fun rowRepository(): RowInMemoryRepository
 	fun rowReadModelRepository(): RowReadModelInMemoryRepository
+	fun mockRowExtractor(): MockRowExtractor
 }
 
 internal fun ApplicationTestBuilder.setupTestApp(): TestAppComponent {
@@ -76,7 +82,8 @@ internal fun ApplicationTestBuilder.setupTestApp(): TestAppComponent {
 			testAppComponent.versionReadModelRepository(),
 			testAppComponent.tableReadModelRepository(),
 			testAppComponent.rowRepository(),
-			testAppComponent.rowReadModelRepository()
+			testAppComponent.rowReadModelRepository(),
+			testAppComponent.mockRowExtractor()
 		)
 	}
 	return testAppComponent
