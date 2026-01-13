@@ -20,17 +20,21 @@ object TableVersionsTable : ExposedTable("table_versions") {
 }
 
 object TableColumnsTable : ExposedTable("table_columns") {
-    val id = long("id").autoIncrement()
-    val versionId = reference("version_id", TableVersionsTable.id, onDelete = ReferenceOption.CASCADE)
+
+    val id = uuid("id")
     val name = varchar("name", 255)
     val description = text("description")
     val typeName = varchar("type_name", 50)
     val stringFormat = varchar("string_format", 50).nullable()
     val optional = bool("optional")
 
-    init {
-        uniqueIndex("table_columns_version_id_name_uk", versionId, name)
-    }
-
     override val primaryKey = PrimaryKey(id)
+}
+
+object VersionColumnTable : ExposedTable("version_column_assoc") {
+
+    val versionId = reference("version_id", TableVersionsTable.id, onDelete = ReferenceOption.CASCADE)
+    val columnDefinitionId = uuid("column_definition_id").references(TableColumnsTable.id)
+
+    override val primaryKey = PrimaryKey(versionId, columnDefinitionId)
 }

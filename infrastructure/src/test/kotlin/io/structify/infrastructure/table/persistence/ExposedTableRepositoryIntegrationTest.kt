@@ -71,24 +71,27 @@ internal class ExposedTableRepositoryIntegrationTest : DatabaseIntegrationTest()
 		val userId = UUID.randomUUID()
 		val tableId = UUID.randomUUID()
 
+		val column1 = ColumnDefinition(
+			name = "name", // same pk for columns (versionId+name)
+			description = "name v2",
+			type = ColumnType.StringType(format = StringFormat.DATE),
+			optional = true
+		)
 		val table = Table(
 			id = tableId,
 			userId = userId,
 			name = "People",
 		).apply {
-			update(
-				listOf(
-					ColumnDefinition(
-						name = "name", // same pk for columns (versionId+name)
-						description = "name v2",
-						type = ColumnType.StringType(format = StringFormat.DATE),
-						optional = true
-					),
-				),
-			)
+			update(listOf(column1))
 			repo.persist(this)
 		}
 
+		val column2 = ColumnDefinition(
+			name = "age",
+			description = "age added",
+			type = ColumnType.NumberType,
+			optional = false
+		)
 		table.update(
 			listOf(
 				ColumnDefinition(
@@ -97,12 +100,7 @@ internal class ExposedTableRepositoryIntegrationTest : DatabaseIntegrationTest()
 					type = ColumnType.StringType(format = StringFormat.DATE),
 					optional = true
 				),
-				ColumnDefinition(
-					name = "age",
-					description = "age added",
-					type = ColumnType.NumberType,
-					optional = false
-				)
+				column2
 			),
 		)
 		repo.persist(table)
@@ -117,31 +115,10 @@ internal class ExposedTableRepositoryIntegrationTest : DatabaseIntegrationTest()
 		assertThat(found.versions).hasSize(2)
 		val firstVersion = found.versions.minBy(Version::orderNumber)
 		assertThat(firstVersion.orderNumber).isEqualTo(1)
-		assertThat(firstVersion.columns).containsExactlyInAnyOrder(
-			ColumnDefinition(
-				name = "name", // same pk for columns (versionId+name)
-				description = "name v2",
-				type = ColumnType.StringType(format = StringFormat.DATE),
-				optional = true
-			),
-		)
+		assertThat(firstVersion.columns).containsExactlyInAnyOrder(column1)
 
 		val secondVersion = found.versions.maxBy(Version::orderNumber)
 		assertThat(secondVersion.orderNumber).isEqualTo(2)
-		assertThat(secondVersion.columns).containsExactlyInAnyOrder(
-			ColumnDefinition(
-				name = "name",
-				description = "name v2",
-				type = ColumnType.StringType(format = StringFormat.DATE),
-				optional = true
-			),
-			ColumnDefinition(
-				name = "age",
-				description = "age added",
-				type = ColumnType.NumberType,
-				optional = false
-			)
-
-		)
+		assertThat(secondVersion.columns).containsExactlyInAnyOrder(column1, column2)
 	}
 }

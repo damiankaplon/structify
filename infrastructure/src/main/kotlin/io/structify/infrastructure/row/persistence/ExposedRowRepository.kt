@@ -3,6 +3,7 @@ package io.structify.infrastructure.row.persistence
 import io.structify.domain.row.Cell
 import io.structify.domain.row.Row
 import io.structify.domain.row.RowRepository
+import io.structify.infrastructure.db.NoEntityFoundException
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.notInList
 import org.jetbrains.exposed.sql.and
@@ -20,7 +21,7 @@ class ExposedRowRepository : RowRepository {
 		}
 
 		row.cells.forEach { cell ->
-			CellsTable.upsert(CellsTable.rowId, CellsTable.columnId) { dbRow ->
+			CellsTable.upsert(CellsTable.rowId, CellsTable.columnDefinitionId) { dbRow ->
 				dbRow.updateWith(row.id, cell)
 			}
 		}
@@ -28,37 +29,38 @@ class ExposedRowRepository : RowRepository {
 		return row
 	}
 
-	override suspend fun findByTableId(tableId: UUID): Set<Row> {
-		val rowIds = RowsTable.selectAll()
-			.where { RowsTable.tableId eq tableId }
-			.map { it[RowsTable.id] }
-
-		return rowIds.mapTo(linkedSetOf()) { rowId ->
-			val cells = fetchCells(rowId)
-			Row(
-				id = rowId,
-				tableId = tableId,
-				cells = cells,
-			)
-		}
+	override suspend fun findById(id: UUID): Row? {
+		return RowsTable.selectAll()
+			.where { RowsTable.id eq id }
+			.singleOrNull()
+			?.let { row ->
+				return Row(
+					id = row[RowsTable.id],
+					versionId = row[RowsTable.versionId],
+					cells = fetchCells(row[RowsTable.id])
+				)
+			}
 	}
+
+	override suspend fun findByIdOrThrow(id: UUID): Row =
+		findById(id) ?: throw NoEntityFoundException("Row with id $id not found")
 
 	private fun UpdateBuilder<*>.updateWith(row: Row) {
 		this[RowsTable.id] = row.id
-		this[RowsTable.tableId] = row.tableId
+		this[RowsTable.versionId] = row.versionId
 	}
 
 	private fun UpdateBuilder<*>.updateWith(rowId: UUID, cell: Cell) {
 		this[CellsTable.rowId] = rowId
-		this[CellsTable.columnId] = cell.columnId
+		this[CellsTable.columnDefinitionId] = cell.columnDefinitionId
 		this[CellsTable.value] = cell.value
 	}
 
 	private fun Row.removeStaleCells() {
 		val rowId = this.id
-		val columnIds = this.cells.map(Cell::columnId)
+		val definitionIds = this.cells.map(Cell::columnDefinitionId)
 		CellsTable.deleteWhere {
-			(CellsTable.rowId eq rowId) and (CellsTable.columnId notInList columnIds)
+			(CellsTable.rowId eq rowId) and (CellsTable.columnDefinitionId notInList definitionIds)
 		}
 	}
 
@@ -67,7 +69,7 @@ class ExposedRowRepository : RowRepository {
 			.where { CellsTable.rowId eq rowId }
 			.mapTo(linkedSetOf()) { row ->
 				Cell(
-					columnId = row[CellsTable.columnId],
+					columnDefinitionId = row[CellsTable.columnDefinitionId],
 					value = row[CellsTable.value],
 				)
 			}

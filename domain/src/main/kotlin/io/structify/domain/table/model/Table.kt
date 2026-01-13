@@ -12,7 +12,11 @@ class Table(
 
 	fun update(columns: List<ColumnDefinition>) {
 		val recent: Int = versions.maxOfOrNull(Version::orderNumber) ?: 0
-		versions = versions + Version(columns = columns, orderNumber = recent + 1)
+		val allColumns = versions.flatMap(Version::columns)
+		val newVersionColumns = columns.map { column ->
+			allColumns.firstOrNull { it.sameDefinitionAs(column) } ?: column
+		}
+		versions = versions + Version(columns = newVersionColumns, orderNumber = recent + 1)
     }
 
     fun getCurrentVersion(): Version = versions.maxBy { it.orderNumber }

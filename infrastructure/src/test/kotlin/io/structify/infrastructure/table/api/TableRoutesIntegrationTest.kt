@@ -8,6 +8,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
+import io.structify.infrastructure.kotlinx.serialization.toKotlinx
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository.ColumnDefinition
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository.ColumnType
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository.Version
@@ -29,7 +30,7 @@ internal class TableRoutesIntegrationTest {
 		testApp.mockJwtAuthenticationProvider().setTestJwtPrincipalSubject(loggedInUserUuid.toString())
 
 		// when
-		val response = clientJson.post("/api/tables") {
+		clientJson.post("/api/tables") {
 			contentType(ContentType.Application.Json)
 			setBody(
 				CreateTableRequest(
@@ -104,7 +105,7 @@ internal class TableRoutesIntegrationTest {
 				id = UUID.randomUUID().toString(),
 				columns = listOf(
 					ColumnDefinition(
-						id = 1,
+						id = UUID.randomUUID().toKotlinx(),
 						name = "email",
 						description = "User email",
 						type = ColumnType(type = "STRING", format = null),
@@ -142,7 +143,7 @@ internal class TableRoutesIntegrationTest {
 				id = UUID.randomUUID().toString(),
 				columns = listOf(
 					ColumnDefinition(
-						id = 1,
+						id = UUID.randomUUID().toKotlinx(),
 						name = "email",
 						description = "User email",
 						type = ColumnType(type = "STRING", format = null),
@@ -160,14 +161,14 @@ internal class TableRoutesIntegrationTest {
 				id = UUID.randomUUID().toString(),
 				columns = listOf(
 					ColumnDefinition(
-						id = 2,
+						id = UUID.randomUUID().toKotlinx(),
 						name = "email",
 						description = "User email",
 						type = ColumnType(type = "STRING", format = null),
 						optional = false
 					),
 					ColumnDefinition(
-						id = 3,
+						id = UUID.randomUUID().toKotlinx(),
 						name = "age",
 						description = "User age",
 						type = ColumnType(type = "NUMBER", format = null),

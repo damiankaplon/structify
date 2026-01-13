@@ -1,12 +1,15 @@
 package io.structify.infrastructure.table.readmodel
 
 import io.structify.infrastructure.db.NoEntityFoundException
+import io.structify.infrastructure.kotlinx.serialization.toKotlinx
 import io.structify.infrastructure.table.persistence.TableColumnsTable
 import io.structify.infrastructure.table.persistence.TableVersionsTable
 import io.structify.infrastructure.table.persistence.TablesTable
+import io.structify.infrastructure.table.persistence.VersionColumnTable
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository.ColumnDefinition
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository.ColumnType
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository.Version
+import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
@@ -52,11 +55,12 @@ class VersionReadModelExposedRepository : VersionReadModelRepository {
 	}
 
 	private fun fetchColumns(versionId: UUID): List<ColumnDefinition> {
-		return TableColumnsTable.selectAll()
-			.where { TableColumnsTable.versionId eq versionId }
+		return TableColumnsTable.join(VersionColumnTable, JoinType.INNER, VersionColumnTable.columnDefinitionId, TableColumnsTable.id)
+			.selectAll()
+			.where { VersionColumnTable.versionId eq versionId }
 			.map { cRow ->
 				ColumnDefinition(
-					id = cRow[TableColumnsTable.id],
+					id = cRow[TableColumnsTable.id].toKotlinx(),
 					name = cRow[TableColumnsTable.name],
 					description = cRow[TableColumnsTable.description],
 					type = ColumnType(

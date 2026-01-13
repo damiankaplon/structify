@@ -17,6 +17,7 @@ import io.structify.domain.row.RowCommandHandler
 import io.structify.domain.row.RowExtractor
 import io.structify.domain.row.RowRepository
 import io.structify.domain.table.TableRepository
+import io.structify.infrastructure.kotlinx.serialization.Uuid
 import io.structify.infrastructure.row.readmodel.RowReadModelRepository
 import io.structify.infrastructure.security.jwtPrincipalOrThrow
 import kotlinx.serialization.Serializable
@@ -35,7 +36,7 @@ fun Route.rowRoutes(
 				val principal = call.jwtPrincipalOrThrow()
 				val tableId = UUID.fromString(call.parameters["tableId"])
 
-				// Verify user has access to this table
+				// Verify the user has access to this table
 				tableRepository.findByIdThrow(principal.userId, tableId)
 
 				val rows = rowReadModelRepository.findAllByTableId(tableId)
@@ -50,11 +51,10 @@ fun Route.rowRoutes(
 				val tableId = UUID.fromString(call.parameters["tableId"])
 				val request = call.receive<CreateRowRequest>()
 
-				// Verify user has access to this table
-				tableRepository.findByIdThrow(principal.userId, tableId)
+				val table = tableRepository.findByIdThrow(principal.userId, tableId)
 
 				val row = Row(
-					tableId = tableId,
+					versionId = table.getCurrentVersion().id,
 					cells = request.cells.mapTo(linkedSetOf()) { it.toDomain() },
 				)
 
@@ -67,21 +67,18 @@ fun Route.rowRoutes(
 		put("/{rowId}") {
 			transactionalRunner.transaction {
 				val principal = call.jwtPrincipalOrThrow()
-				val tableId = UUID.fromString(call.parameters["tableId"])
 				val rowId = UUID.fromString(call.parameters["rowId"])
 				val request = call.receive<UpdateRowRequest>()
 
-				// Verify user has access to this table
-				tableRepository.findByIdThrow(principal.userId, tableId)
-
-				val row = Row(
-					id = rowId,
-					tableId = tableId,
-					cells = request.cells.mapTo(linkedSetOf()) { it.toDomain() },
-				)
-
+				val row = rowRepository.findByIdOrThrow(rowId)
+				val table = tableRepository.findByVersionIdOrThrow(row.versionId)
+				require(table.userId == principal.userId) { "User does not have access to this table" }
+				val newCells = request.cells.mapTo(linkedSetOf()) { it.toDomain() }
+				newCells.forEach { newCell ->
+					val cell = row.cells.firstOrNull { newCell.columnDefinitionId == it.columnDefinitionId }
+					cell?.value = newCell.value
+				}
 				rowRepository.save(row)
-
 				call.respond(HttpStatusCode.OK)
 			}
 		}
@@ -131,13 +128,13 @@ internal data class UpdateRowRequest(
 
 @Serializable
 internal data class CellDto(
-	val columnId: Int,
+	val columnId: Uuid,
 	val value: String,
 ) {
 
 	fun toDomain(): Cell {
 		return Cell(
-			columnId = columnId,
+			columnDefinitionId = columnId.toJava(),
 			value = value,
 		)
 	}

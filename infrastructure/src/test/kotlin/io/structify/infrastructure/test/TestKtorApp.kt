@@ -7,15 +7,14 @@ import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.structify.domain.db.TransactionalRunner
-import io.structify.domain.row.RowExtractor
 import io.structify.domain.test.fixtures.db.MockTransactionalRunner
 import io.structify.domain.test.fixtures.row.RowInMemoryRepository
 import io.structify.domain.test.fixtures.table.TableInMemoryRepository
 import io.structify.infrastructure.installApp
+import io.structify.infrastructure.row.extractors.MockRowExtractor
 import io.structify.infrastructure.row.readmodel.RowReadModelInMemoryRepository
 import io.structify.infrastructure.table.readmodel.TableReadModelInMemoryRepository
 import io.structify.infrastructure.table.readmodel.VersionReadModelInMemoryRepository
-import io.structify.infrastructure.test.fixtures.MockRowExtractor
 import jakarta.inject.Singleton
 
 @Module
@@ -55,7 +54,7 @@ internal class TestAppModule {
 
 	@Provides
 	@Singleton
-	fun provideRowExtractor(): RowExtractor = MockRowExtractor()
+	fun provideRowExtractor(): MockRowExtractor = MockRowExtractor()
 }
 
 @Singleton
@@ -69,7 +68,7 @@ internal interface TestAppComponent {
 	fun tableReadModelRepository(): TableReadModelInMemoryRepository
 	fun rowRepository(): RowInMemoryRepository
 	fun rowReadModelRepository(): RowReadModelInMemoryRepository
-	fun rowExtractor(): RowExtractor
+	fun mockRowExtractor(): MockRowExtractor
 }
 
 internal fun ApplicationTestBuilder.setupTestApp(): TestAppComponent {
@@ -84,7 +83,7 @@ internal fun ApplicationTestBuilder.setupTestApp(): TestAppComponent {
 			testAppComponent.tableReadModelRepository(),
 			testAppComponent.rowRepository(),
 			testAppComponent.rowReadModelRepository(),
-			testAppComponent.rowExtractor()
+			testAppComponent.mockRowExtractor()
 		)
 	}
 	return testAppComponent

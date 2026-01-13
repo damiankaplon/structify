@@ -14,15 +14,14 @@ class RowInMemoryRepository : RowRepository {
 		return row
 	}
 
-	override suspend fun findByTableId(tableId: UUID): Set<Row> {
-		return rows.values.filter { it.tableId == tableId }.toSet()
-	}
-
 	fun findAll(): List<Row> {
 		return rows.values.toList()
 	}
 
-	fun findById(id: UUID): Row? {
-		return rows[id]
+	override suspend fun findById(id: UUID): Row? {
+		return rows.values.firstOrNull { it.id == id }
 	}
+
+	override suspend fun findByIdOrThrow(id: UUID): Row =
+		findById(id) ?: error("Could not find row with id: $id")
 }

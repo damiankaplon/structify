@@ -1,6 +1,8 @@
 package io.structify.domain.row
 
+import java.util.UUID
+
 data class Cell(
-	val columnId: Int,
+	val columnDefinitionId: UUID,
 	var value: String,
 )

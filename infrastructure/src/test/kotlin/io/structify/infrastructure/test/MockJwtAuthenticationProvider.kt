@@ -1,12 +1,15 @@
 package io.structify.infrastructure.test
 
-import io.structify.infrastructure.security.SecuredRouting
-import io.ktor.server.auth.*
-import io.ktor.server.auth.jwt.*
-import io.ktor.server.routing.*
+import io.ktor.server.auth.AuthenticationContext
+import io.ktor.server.auth.AuthenticationProvider
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.Routing
 import io.mockk.every
 import io.mockk.mockk
-import java.util.*
+import io.structify.infrastructure.security.SecuredRouting
+import java.util.UUID
 
 const val MOCK_JWT_AUTH_PROVIDER_NAME = "mock-jwt-auth-provider"
 
@@ -27,6 +30,5 @@ internal class MockJwtAuthenticationProvider : AuthenticationProvider(Config()),
         routing.authenticate(MOCK_JWT_AUTH_PROVIDER_NAME) { routes() }
     }
 
-    private class Config() : AuthenticationProvider.Config(MOCK_JWT_AUTH_PROVIDER_NAME)
+    private class Config : AuthenticationProvider.Config(MOCK_JWT_AUTH_PROVIDER_NAME)
 }
-

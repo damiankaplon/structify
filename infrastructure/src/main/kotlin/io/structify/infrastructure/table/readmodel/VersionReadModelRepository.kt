@@ -1,5 +1,6 @@
 package io.structify.infrastructure.table.readmodel
 
+import io.structify.infrastructure.kotlinx.serialization.Uuid
 import kotlinx.serialization.Serializable
 import java.util.UUID
 
@@ -18,7 +19,7 @@ interface VersionReadModelRepository {
 
 	@Serializable
 	data class ColumnDefinition(
-		val id: Long,
+		val id: Uuid,
 		val name: String,
 		val description: String,
 		val type: ColumnType,
