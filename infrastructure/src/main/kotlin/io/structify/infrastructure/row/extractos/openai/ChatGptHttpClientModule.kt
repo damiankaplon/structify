@@ -11,10 +11,12 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.headers
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.URLProtocol.Companion.HTTPS
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.config.ApplicationConfig
+import io.structify.infrastructure.kotlinx.serialization.json
 import jakarta.inject.Singleton
 
 interface ChatGptHttpClient {
@@ -38,7 +40,7 @@ class ChatGptHttpClientModule {
 			}
 
 			install(HttpTimeout) { requestTimeoutMillis = 120000 }
-			install(ContentNegotiation) { json() }
+			install(ContentNegotiation) { json(json = json, contentType = ContentType.Application.Json) }
 			install(Logging) {
 				level = LogLevel.ALL
 				sanitizeHeader { header -> header == HttpHeaders.Authorization }

@@ -9,7 +9,7 @@ data class ChatGptResponsesApiResponse(
 
 	@Serializable
 	data class Output(
-		val content: Set<Content>,
+		val content: Set<Content>? = null,
 	) {
 
 		@Serializable

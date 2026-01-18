@@ -4,11 +4,12 @@ import io.structify.domain.table.model.Column
 import io.structify.domain.table.model.ColumnType
 
 fun generateSchema(columns: List<Column>): ChatGptResponsesApiRequest.Text.Format.Schema {
-	val properties = columns.map { mapOf(it.definition.toProperty()) }
+	val properties = columns.associate { it.definition.toProperty() }
 	return ChatGptResponsesApiRequest.Text.Format.Schema(
 		name = "",
 		type = "object",
-		properties = properties
+		properties = properties,
+		required = columns.map { it.definition.name }.toSet()
 	)
 }
 

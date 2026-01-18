@@ -30,16 +30,19 @@ data class ChatGptResponsesApiRequest(
 		@Serializable
 		data class Format(
 			val name: String,
-			val schema: Schema,
 			val description: String,
 			val type: String,
+			val schema: Schema,
+			val strict: Boolean = true,
 		) {
 
 			@Serializable
 			data class Schema(
 				val name: String,
 				val type: String,
-				val properties: List<Map<String, Property>>,
+				val properties: Map<String, Property>,
+				val additionalProperties: Boolean = false,
+				val required: Set<String>,
 			) {
 
 				@Serializable

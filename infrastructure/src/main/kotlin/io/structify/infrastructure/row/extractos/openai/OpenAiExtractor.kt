@@ -28,6 +28,7 @@ class OpenAiExtractor(
 			contentType(ContentType.Application.Json)
 			setBody(
 				ChatGptResponsesApiRequest(
+					model = "gpt-5-mini",
 					input = setOf(
 						ChatGptResponsesApiRequest.ContentInput(
 							role = "user",
@@ -44,13 +45,13 @@ class OpenAiExtractor(
 							name = "text",
 							type = "json_schema",
 							schema = generateSchema(columns),
-							description = "Extracts the road report data from the PDF file"
+							description = "Extracts data from the PDF file content"
 						)
 					)
 				)
 			)
 		}
-		val openAiResult = response.body<ChatGptResponsesApiResponse>().output.first().content.first().text
+		val openAiResult = response.body<ChatGptResponsesApiResponse>().output.first { it.content != null }.content!!.first().text
 			.let { json.parseToJsonElement(it) }
 		val cells = columns.map { column ->
 			val columnId = column.id

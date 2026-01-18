@@ -7,5 +7,6 @@ val json = Json {
 	isLenient = true
 	allowSpecialFloatingPointValues = true
 	allowStructuredMapKeys = true
+	ignoreUnknownKeys = true
 	prettyPrint = true
 }
