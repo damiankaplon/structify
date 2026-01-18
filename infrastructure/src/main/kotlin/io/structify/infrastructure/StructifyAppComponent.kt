@@ -9,6 +9,7 @@ import io.structify.domain.row.RowRepository
 import io.structify.domain.table.TableRepository
 import io.structify.infrastructure.db.dagger.DatabaseModule
 import io.structify.infrastructure.row.dagger.RowModule
+import io.structify.infrastructure.row.extractos.openai.ChatGptHttpClientModule
 import io.structify.infrastructure.row.readmodel.RowReadModelRepository
 import io.structify.infrastructure.table.dagger.TableRepositoryModule
 import io.structify.infrastructure.table.readmodel.TableReadModelRepository
@@ -22,6 +23,7 @@ import org.jetbrains.exposed.sql.Database
 		DatabaseModule::class,
 		TableRepositoryModule::class,
 		RowModule::class,
+		ChatGptHttpClientModule::class
 	]
 )
 interface StructifyAppComponent {
