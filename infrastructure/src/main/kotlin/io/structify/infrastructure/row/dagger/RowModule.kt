@@ -4,7 +4,9 @@ import dagger.Module
 import dagger.Provides
 import io.structify.domain.row.RowExtractor
 import io.structify.domain.row.RowRepository
-import io.structify.infrastructure.row.extractos.OpenAiExtractor
+import io.structify.infrastructure.kotlinx.serialization.json
+import io.structify.infrastructure.row.extractos.openai.ChatGptHttpClient
+import io.structify.infrastructure.row.extractos.openai.OpenAiExtractor
 import io.structify.infrastructure.row.persistence.ExposedRowRepository
 import io.structify.infrastructure.row.readmodel.ExposedRowReadModelRepository
 import io.structify.infrastructure.row.readmodel.RowReadModelRepository
@@ -27,7 +29,7 @@ class RowModule {
 
 	@Provides
 	@Singleton
-	fun rowExtractor(): RowExtractor {
-		return OpenAiExtractor()
+	fun rowExtractor(chatGptHttpClient: ChatGptHttpClient): RowExtractor {
+		return OpenAiExtractor(chatGptHttpClient.client, json)
 	}
 }
