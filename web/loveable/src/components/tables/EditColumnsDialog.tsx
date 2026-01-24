@@ -1,27 +1,14 @@
 import React, {useState} from 'react';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,} from '@/components/ui/dialog';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {Textarea} from '@/components/ui/textarea';
 import {Checkbox} from '@/components/ui/checkbox';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import {Plus, Trash2, Loader2, GripVertical} from 'lucide-react';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select';
+import {GripVertical, Loader2, Plus, Trash2} from 'lucide-react';
 import {useApi} from '@/hooks/useApi';
-import {tablesApi, CreateColumnRequest, Column} from '@/lib/api';
+import {Column, CreateColumnRequest, tablesApi} from '@/lib/api';
 import {useToast} from '@/hooks/use-toast';
 import {Card} from '@/components/ui/card';
 
@@ -100,13 +87,17 @@ const EditColumnsDialog: React.FC<EditColumnsDialogProps> = ({
 
         setIsLoading(true);
         try {
-            const columnRequests: CreateColumnRequest[] = columns.map((col) => ({
-                name: col.name,
-                description: col.description,
-                type: col.type,
-                stringFormat: null,
-                optional: col.optional,
-            }));
+            const columnRequests: CreateColumnRequest[] = columns.map((col) => {
+                const type = col.type === 'DATE' ? 'STRING' : col.type;
+                const stringFormat = col.type === 'DATE' ? 'DATE' : null;
+                return ({
+                    name: col.name,
+                    description: col.description,
+                    type: type,
+                    stringFormat: stringFormat,
+                    optional: col.optional,
+                })
+            });
 
             await tablesApi.createVersion(api, tableId, columnRequests);
             toast({
