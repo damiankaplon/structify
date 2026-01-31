@@ -1,6 +1,6 @@
 FROM eclipse-temurin:25-jdk-alpine
 WORKDIR /app
-COPY ./infrastructure/build/install/*/ ./
+COPY ./infrastructure/build ./
 COPY ./web/loveable/dist ./web/loveable/dist
 EXPOSE 8080
-ENTRYPOINT ["sh app/infrastructure/build/install/infrastructure/bin/infrastructure"]
+ENTRYPOINT ["sh install/infrastructure/bin/infrastructure"]
