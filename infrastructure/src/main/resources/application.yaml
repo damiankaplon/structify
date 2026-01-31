@@ -9,6 +9,8 @@ app:
   chatGpt:
     host: api.openai.com
     apiKey: "$APP_CHATGPT_API_KEY"
+  ui:
+    path: "$APP_STRUCTIFY_UI_HOSTED:web/loveable/dist"
 
 oauth:
   auth-url: "$APP_STRUCTIFY_OAUTH_AUTH_URL:http://localhost:8282/realms/structify/protocol/openid-connect/auth"
