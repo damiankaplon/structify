@@ -3,4 +3,4 @@ WORKDIR /app
 COPY ./infrastructure/build ./
 COPY ./web/loveable/dist ./web/loveable/dist
 EXPOSE 8080
-ENTRYPOINT ["sh install/infrastructure/bin/infrastructure"]
+ENTRYPOINT ["/app/install/infrastructure/bin/infrastructure"]
