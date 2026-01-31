@@ -3,6 +3,8 @@ package io.structify.infrastructure
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
+import io.ktor.server.http.content.react
+import io.ktor.server.http.content.singlePageApplication
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.route
@@ -41,6 +43,14 @@ fun Application.module() {
 		appComponent.rowReadModelRepository(),
 		appComponent.rowExtractor(),
 	)
+	val hostedReactAppPath = environment.config.propertyOrNull("app.ui.path")?.getString()
+	if (hostedReactAppPath != null) {
+		routing {
+			singlePageApplication {
+				react(hostedReactAppPath)
+			}
+		}
+	}
 }
 
 fun Application.installApp(
