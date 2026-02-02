@@ -48,6 +48,7 @@ fun Route.tableRoutes(
 				)
 
 				tableRepository.persist(table)
+				tableReadModelRepository.addDescription(table.id, request.description)
 
 				call.respond(HttpStatusCode.Created, message = TableId(table.id.toString()))
 			}

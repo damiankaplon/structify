@@ -199,11 +199,11 @@ internal class TableRoutesIntegrationTest {
 		// and two tables for this user in read model
 		testApp.tableReadModelRepository().addTable(
 			loggedInUserUuid,
-			TableReadModelTable(id = UUID.randomUUID().toString(), name = "Users")
+			TableReadModelTable(id = UUID.randomUUID().toString(), name = "Users", description = "All users")
 		)
 		testApp.tableReadModelRepository().addTable(
 			loggedInUserUuid,
-			TableReadModelTable(id = UUID.randomUUID().toString(), name = "Orders")
+			TableReadModelTable(id = UUID.randomUUID().toString(), name = "Orders", description = "All orders")
 		)
 
 		// when
@@ -227,17 +227,17 @@ internal class TableRoutesIntegrationTest {
 		// and two tables for current user
 		testApp.tableReadModelRepository().addTable(
 			loggedInUserUuid,
-			TableReadModelTable(id = UUID.randomUUID().toString(), name = "Customers")
+			TableReadModelTable(id = UUID.randomUUID().toString(), name = "Customers", description = "All customers")
 		)
 		testApp.tableReadModelRepository().addTable(
 			loggedInUserUuid,
-			TableReadModelTable(id = UUID.randomUUID().toString(), name = "Invoices")
+			TableReadModelTable(id = UUID.randomUUID().toString(), name = "Invoices", description = "All invoices")
 		)
 
 		// and one table for a different user
 		testApp.tableReadModelRepository().addTable(
 			otherUserUuid,
-			TableReadModelTable(id = UUID.randomUUID().toString(), name = "ShouldNotBeVisible")
+			TableReadModelTable(id = UUID.randomUUID().toString(), name = "ShouldNotBeVisible", description = "Should not be visible")
 		)
 
 		// when

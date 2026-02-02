@@ -15,6 +15,9 @@ internal class TableReadModelInMemoryRepository : TableReadModelRepository {
 		userTables.getOrPut(userId) { linkedSetOf() }.add(table)
 	}
 
+	override suspend fun addDescription(id: UUID, description: String) {
+	}
+
 	fun clear() {
 		userTables.clear()
 	}

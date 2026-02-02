@@ -7,6 +7,7 @@ object TablesTable : ExposedTable("tables") {
     val id = uuid("id")
     val userId = uuid("user_id")
     val name = varchar("name", 255)
+    var description = text("description").default("")
 
     override val primaryKey = PrimaryKey(id)
 }
