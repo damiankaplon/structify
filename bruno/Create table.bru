@@ -11,11 +11,81 @@ post {
 }
 
 body:json {
-  {
-    "name": "test table",
-    "description": "test description"
-  }
-  
+  [
+    {
+      "name": "Company Name",
+      "type": "STRING",
+      "description": "The official name of the company"
+    },
+    {
+      "name": "Headquarters",
+      "type": "OBJECT",
+      "description": "Company headquarters location details",
+      "children": [
+        {
+          "name": "Street",
+          "type": "STRING",
+          "description": "Street address of headquarters"
+        },
+        {
+          "name": "City",
+          "type": "STRING",
+          "description": "City where headquarters is located"
+        },
+        {
+          "name": "Coordinates",
+          "type": "OBJECT",
+          "description": "GPS coordinates of the headquarters",
+          "children": [
+            {
+              "name": "Latitude",
+              "type": "NUMBER",
+              "description": "Latitude coordinate"
+            },
+            {
+              "name": "Longitude",
+              "type": "NUMBER",
+              "description": "Longitude coordinate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CEO",
+      "type": "OBJECT",
+      "description": "Chief Executive Officer information",
+      "children": [
+        {
+          "name": "Full Name",
+          "type": "STRING",
+          "description": "CEO full legal name"
+        },
+        {
+          "name": "Contact",
+          "type": "OBJECT",
+          "description": "CEO contact information",
+          "children": [
+            {
+              "name": "Email",
+              "type": "STRING",
+              "description": "CEO email address"
+            },
+            {
+              "name": "Phone",
+              "type": "STRING",
+              "description": "CEO phone number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Employee Count",
+      "type": "NUMBER",
+      "description": "Total number of employees"
+    }
+  ]
 }
 
 settings {

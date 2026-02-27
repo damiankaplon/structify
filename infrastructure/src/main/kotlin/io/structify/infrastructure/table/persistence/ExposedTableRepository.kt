@@ -29,11 +29,13 @@ class ExposedTableRepository : TableRepository {
 			TableVersionsTable.upsert(TableVersionsTable.id) { row ->
 				row.updateWith(table.id, version)
 			}
+
+			// Persist columns hierarchically with parent references
 			version.columns.forEach { column ->
-				TableColumnsTable.upsert(TableColumnsTable.id) { row ->
-					row.updateWith(column)
-				}
+				persistColumnHierarchy(column, parentId = null)
 			}
+
+			// Only store top-level columns in version_column_assoc
 			version.columns.forEach { column ->
 				VersionColumnTable.upsert(VersionColumnTable.versionId, VersionColumnTable.columnDefinitionId) { row ->
 					row[VersionColumnTable.versionId] = version.id
@@ -112,6 +114,7 @@ class ExposedTableRepository : TableRepository {
 	private fun fromDbType(typeName: String, format: String?): ColumnType = when (typeName) {
 		"STRING" -> ColumnType.StringType(format = format?.let { StringFormat.valueOf(it) })
 		"NUMBER" -> ColumnType.NumberType
+		"OBJECT" -> ColumnType.ObjectType
 		else -> error("Unknown column type: $typeName")
 	}
 
@@ -127,39 +130,80 @@ class ExposedTableRepository : TableRepository {
 		this[TableVersionsTable.orderNumber] = version.orderNumber
 	}
 
-	private fun UpdateBuilder<*>.updateWith(column: Column) {
+	private fun UpdateBuilder<*>.updateWith(column: Column, parentId: UUID?) {
 		this[TableColumnsTable.id] = column.id
 		this[TableColumnsTable.name] = column.definition.name
 		this[TableColumnsTable.description] = column.definition.description
 		this[TableColumnsTable.typeName] = toTypeName(column.definition.type)
 		this[TableColumnsTable.stringFormat] = toStringFormat(column.definition.type)
 		this[TableColumnsTable.optional] = column.definition.optional
+		this[TableColumnsTable.parentColumnId] = parentId
 	}
 
 	private fun toTypeName(type: ColumnType): String = when (type) {
 		is ColumnType.StringType -> "STRING"
 		is ColumnType.NumberType -> "NUMBER"
+		is ColumnType.ObjectType -> "OBJECT"
 	}
 
 	private fun toStringFormat(type: ColumnType): String? = when (type) {
 		is ColumnType.StringType -> type.format?.name
 		is ColumnType.NumberType -> null
+		is ColumnType.ObjectType -> null
 	}
 
 	private fun fetchColumns(versionId: UUID): List<Column> {
-		return TableColumnsTable.join(VersionColumnTable, JoinType.INNER, VersionColumnTable.columnDefinitionId, TableColumnsTable.id)
+		// Fetch only top-level columns for this version
+		val topLevelColumns = TableColumnsTable.join(
+			VersionColumnTable,
+			JoinType.INNER,
+			VersionColumnTable.columnDefinitionId,
+			TableColumnsTable.id
+		)
 			.selectAll()
 			.where { VersionColumnTable.versionId eq versionId }
-			.map { row ->
-				Column(
-					id = row[TableColumnsTable.id],
-					definition = Column.Definition(
-						name = row[TableColumnsTable.name],
-						description = row[TableColumnsTable.description],
-						type = fromDbType(row[TableColumnsTable.typeName], row[TableColumnsTable.stringFormat]),
-						optional = row[TableColumnsTable.optional]
-					),
-				)
-			}
+			.map { row -> row[TableColumnsTable.id] }
+
+		return topLevelColumns.map { columnId ->
+			fetchColumnWithChildren(columnId)
+		}
+	}
+
+	private fun fetchColumnWithChildren(columnId: UUID): Column {
+		val row = TableColumnsTable.selectAll()
+			.where { TableColumnsTable.id eq columnId }
+			.single()
+
+		// Recursively fetch child columns
+		val childIds = TableColumnsTable.selectAll()
+			.where { TableColumnsTable.parentColumnId eq columnId }
+			.map { it[TableColumnsTable.id] }
+
+		val children = childIds.map { childId ->
+			fetchColumnWithChildren(childId)
+		}
+
+		return Column(
+			id = row[TableColumnsTable.id],
+			definition = Column.Definition(
+				name = row[TableColumnsTable.name],
+				description = row[TableColumnsTable.description],
+				type = fromDbType(row[TableColumnsTable.typeName], row[TableColumnsTable.stringFormat]),
+				optional = row[TableColumnsTable.optional],
+				children = children.map { it.definition }
+			),
+			children = children
+		)
+	}
+
+	private fun persistColumnHierarchy(column: Column, parentId: UUID?) {
+		TableColumnsTable.upsert(TableColumnsTable.id) { row ->
+			row.updateWith(column, parentId)
+		}
+
+		// Recursively persist children
+		column.children.forEach { child ->
+			persistColumnHierarchy(child, parentId = column.id)
+		}
 	}
 }

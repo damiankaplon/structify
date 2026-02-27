@@ -19,10 +19,7 @@ object CellsTable : ExposedTable("cells") {
 	val rowId = reference("row_id", RowsTable.id, onDelete = ReferenceOption.CASCADE)
 	val columnDefinitionId = uuid("column_definition_id").references(TableColumnsTable.id)
 	val value = text("value")
+	val parentCellId = long("parent_cell_id").nullable()
 
 	override val primaryKey = PrimaryKey(id)
-
-	init {
-		uniqueIndex(rowId, columnDefinitionId)
-	}
 }

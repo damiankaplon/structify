@@ -22,14 +22,15 @@ object TableVersionsTable : ExposedTable("table_versions") {
 
 object TableColumnsTable : ExposedTable("table_columns") {
 
-    val id = uuid("id")
-    val name = varchar("name", 255)
-    val description = text("description")
-    val typeName = varchar("type_name", 50)
-    val stringFormat = varchar("string_format", 50).nullable()
-    val optional = bool("optional")
+	val id = uuid("id")
+	val name = varchar("name", 255)
+	val description = text("description")
+	val typeName = varchar("type_name", 50)
+	val stringFormat = varchar("string_format", 50).nullable()
+	val optional = bool("optional")
+	val parentColumnId = uuid("parent_column_id").nullable()
 
-    override val primaryKey = PrimaryKey(id)
+	override val primaryKey = PrimaryKey(id)
 }
 
 object VersionColumnTable : ExposedTable("version_column_assoc") {

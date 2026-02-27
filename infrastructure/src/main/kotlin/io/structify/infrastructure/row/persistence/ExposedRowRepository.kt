@@ -8,6 +8,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.notInList
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.statements.UpdateBuilder
 import org.jetbrains.exposed.sql.upsert
@@ -20,11 +21,11 @@ class ExposedRowRepository : RowRepository {
 			dbRow.updateWith(row)
 		}
 
+		// Persist cells hierarchically
 		row.cells.forEach { cell ->
-			CellsTable.upsert(CellsTable.rowId, CellsTable.columnDefinitionId) { dbRow ->
-				dbRow.updateWith(row.id, cell)
-			}
+			persistCellHierarchy(row.id, cell, parentCellId = null)
 		}
+		
 		row.removeStaleCells()
 		return row
 	}
@@ -50,28 +51,64 @@ class ExposedRowRepository : RowRepository {
 		this[RowsTable.versionId] = row.versionId
 	}
 
-	private fun UpdateBuilder<*>.updateWith(rowId: UUID, cell: Cell) {
-		this[CellsTable.rowId] = rowId
-		this[CellsTable.columnDefinitionId] = cell.columnDefinitionId
-		this[CellsTable.value] = cell.value
-	}
-
 	private fun Row.removeStaleCells() {
 		val rowId = this.id
-		val definitionIds = this.cells.map(Cell::columnDefinitionId)
+		val allCellDefinitionIds = flattenCells(this.cells).map { it.columnDefinitionId }
 		CellsTable.deleteWhere {
-			(CellsTable.rowId eq rowId) and (CellsTable.columnDefinitionId notInList definitionIds)
+			(CellsTable.rowId eq rowId) and (CellsTable.columnDefinitionId notInList allCellDefinitionIds)
+		}
+	}
+
+	private fun flattenCells(cells: Set<Cell>): List<Cell> {
+		return cells.flatMap { cell ->
+			listOf(cell) + flattenCells(cell.children)
 		}
 	}
 
 	private fun fetchCells(rowId: UUID): Set<Cell> {
-		return CellsTable.selectAll()
-			.where { CellsTable.rowId eq rowId }
-			.mapTo(linkedSetOf()) { row ->
-				Cell(
-					columnDefinitionId = row[CellsTable.columnDefinitionId],
-					value = row[CellsTable.value],
-				)
-			}
+		// Fetch only top-level cells (those without a parent)
+		val topLevelCellRows = CellsTable.selectAll()
+			.where { (CellsTable.rowId eq rowId) and (CellsTable.parentCellId.isNull()) }
+
+		return topLevelCellRows.mapTo(linkedSetOf()) { row ->
+			fetchCellWithChildren(row[CellsTable.id])
+		}
+	}
+
+	private fun fetchCellWithChildren(cellId: Long): Cell {
+		val row = CellsTable.selectAll()
+			.where { CellsTable.id eq cellId }
+			.single()
+
+		// Recursively fetch child cells
+		val childRows = CellsTable.selectAll()
+			.where { CellsTable.parentCellId eq cellId }
+
+		val children = childRows.mapTo(linkedSetOf()) { childRow ->
+			fetchCellWithChildren(childRow[CellsTable.id])
+		}
+
+		return Cell(
+			columnDefinitionId = row[CellsTable.columnDefinitionId],
+			value = row[CellsTable.value],
+			children = children
+		)
+	}
+
+	private fun persistCellHierarchy(rowId: UUID, cell: Cell, parentCellId: Long?): Long {
+		// Insert cell and get the generated ID
+		val cellId = CellsTable.insert { dbRow ->
+			dbRow[CellsTable.rowId] = rowId
+			dbRow[CellsTable.columnDefinitionId] = cell.columnDefinitionId
+			dbRow[CellsTable.value] = cell.value
+			dbRow[CellsTable.parentCellId] = parentCellId
+		}[CellsTable.id]
+
+		// Recursively persist children
+		cell.children.forEach { childCell ->
+			persistCellHierarchy(rowId, childCell, parentCellId = cellId)
+		}
+
+		return cellId
 	}
 }

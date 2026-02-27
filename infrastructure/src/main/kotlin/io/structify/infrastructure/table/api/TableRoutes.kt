@@ -78,7 +78,6 @@ fun Route.tableRoutes(
 
 				val version = versionReadModelRepository.findCurrentVersionByTableId(principal.userId, tableId)
 
-
 				call.respond(HttpStatusCode.OK, version, typeInfo<Version?>())
 			}
 		}
@@ -113,20 +112,23 @@ internal data class ColumnDefinitionDto(
 	val description: String,
 	val type: String,
 	val stringFormat: String? = null,
-	val optional: Boolean,
+	val optional: Boolean = false,
+	val children: List<ColumnDefinitionDto> = emptyList(),
 ) {
 
 	fun toDomain(): Column.Definition {
 		val domainType: ColumnType = when (type.uppercase()) {
 			"STRING" -> ColumnType.StringType(format = stringFormat?.let { StringFormat.valueOf(it) })
 			"NUMBER" -> ColumnType.NumberType
+			"OBJECT" -> ColumnType.ObjectType
 			else -> error("Unknown column type: $type")
 		}
 		return Column.Definition(
 			name = name,
 			description = description,
 			type = domainType,
-			optional = optional
+			optional = optional,
+			children = children.map { it.toDomain() }
 		)
 	}
 }

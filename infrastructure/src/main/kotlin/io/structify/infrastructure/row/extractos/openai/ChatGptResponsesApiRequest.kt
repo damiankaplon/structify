@@ -49,6 +49,9 @@ data class ChatGptResponsesApiRequest(
 				data class Property(
 					val type: Set<String>,
 					val description: String,
+					val properties: Map<String, Property>? = null,
+					val required: Set<String>? = null,
+					val additionalProperties: Boolean? = null,
 				)
 			}
 		}
