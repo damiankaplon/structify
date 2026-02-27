@@ -5,7 +5,6 @@ import io.structify.domain.row.Row
 import io.structify.domain.row.RowRepository
 import io.structify.infrastructure.db.NoEntityFoundException
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.notInList
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
@@ -21,12 +20,14 @@ class ExposedRowRepository : RowRepository {
 			dbRow.updateWith(row)
 		}
 
+		// Delete ALL existing cells for this row first to avoid unique constraint violations
+		CellsTable.deleteWhere { CellsTable.rowId eq row.id }
+		
 		// Persist cells hierarchically
 		row.cells.forEach { cell ->
 			persistCellHierarchy(row.id, cell, parentCellId = null)
 		}
 		
-		row.removeStaleCells()
 		return row
 	}
 
@@ -49,20 +50,6 @@ class ExposedRowRepository : RowRepository {
 	private fun UpdateBuilder<*>.updateWith(row: Row) {
 		this[RowsTable.id] = row.id
 		this[RowsTable.versionId] = row.versionId
-	}
-
-	private fun Row.removeStaleCells() {
-		val rowId = this.id
-		val allCellDefinitionIds = flattenCells(this.cells).map { it.columnDefinitionId }
-		CellsTable.deleteWhere {
-			(CellsTable.rowId eq rowId) and (CellsTable.columnDefinitionId notInList allCellDefinitionIds)
-		}
-	}
-
-	private fun flattenCells(cells: Set<Cell>): List<Cell> {
-		return cells.flatMap { cell ->
-			listOf(cell) + flattenCells(cell.children)
-		}
 	}
 
 	private fun fetchCells(rowId: UUID): Set<Cell> {
