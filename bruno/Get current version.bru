@@ -11,7 +11,7 @@ get {
 }
 
 params:path {
-  tableId: a96c683a-8d32-47ce-85a5-d456583e06a1
+  tableId: 484d47a9-7b99-4ef0-94ad-09d23f89fc32
 }
 
 body:json {
@@ -29,4 +29,110 @@ body:json {
 settings {
   encodeUrl: true
   timeout: 0
+}
+
+example {
+  name: example
+  
+  request: {
+    url: {{base_url}}/tables/:tableId/versions/current
+    method: GET
+    mode: none
+    params:path: {
+      tableId: 484d47a9-7b99-4ef0-94ad-09d23f89fc32
+    }
+  
+    body:json: {
+      [
+        {
+        "name": "colummn one",
+        "description": "test desc",
+        "type": "STRING",
+        "stringFormat": "DATE", 
+        "optional": false
+      }
+      ]
+    }
+  }
+  
+  response: {
+    headers: {
+      content-length: 1033
+      content-type: application/json
+      connection: keep-alive
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "id": "4a3cfb42-bcb5-4ed0-9161-bfce2a292ced",
+          "columns": [
+            {
+              "id": "6d2d77cb-83d6-447e-82b9-34c889cfce86",
+              "name": "Money",
+              "description": "Amount and currency of the transfer",
+              "type": {
+                "type": "OBJECT",
+                "format": null
+              },
+              "optional": false,
+              "children": [
+                {
+                  "id": "c34f10a4-a322-4c9f-8687-cb803da2421e",
+                  "name": "Amount",
+                  "description": "Amount of the payment or transfer. Must be always positive",
+                  "type": {
+                    "type": "NUMBER",
+                    "format": null
+                  },
+                  "optional": false,
+                  "children": []
+                },
+                {
+                  "id": "c0352a23-9058-413b-b17c-dfe33e021d6c",
+                  "name": "Currency",
+                  "description": "Currency of the transfer e.g.: USD, EUR, PLN etc.",
+                  "type": {
+                    "type": "STRING",
+                    "format": null
+                  },
+                  "optional": false,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "127b84ea-a63c-4535-810d-5138bd3d4e8f",
+              "name": "Receiver",
+              "description": "Eventual money receiver of the transaction",
+              "type": {
+                "type": "STRING",
+                "format": null
+              },
+              "optional": false,
+              "children": []
+            },
+            {
+              "id": "f5b10982-4e4d-4fb1-b4ee-0ede29a22d88",
+              "name": "Title",
+              "description": "What was transaction made for?",
+              "type": {
+                "type": "STRING",
+                "format": null
+              },
+              "optional": false,
+              "children": []
+            }
+          ],
+          "orderNumber": 1
+        }
+      '''
+    }
+  }
 }

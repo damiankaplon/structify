@@ -11,96 +11,37 @@ post {
 }
 
 params:path {
-  tableId: a96c683a-8d32-47ce-85a5-d456583e06a1
+  tableId: 484d47a9-7b99-4ef0-94ad-09d23f89fc32
 }
 
 body:json {
   [
     {
-      "name": "Company Name",
-      "description": "The official name of the company",
-      "type": "STRING",
-      "optional": false
-    },
-    {
-      "name": "Headquarters",
-      "description": "Company headquarters location details",
+      "name": "Money",
+      "description": "Amount and currency of the transfer",
       "type": "OBJECT",
-      "optional": false,
       "children": [
         {
-          "name": "Street",
-          "description": "Street address of headquarters",
-          "type": "STRING",
-          "optional": false
+          "name": "Amount",
+          "description": "Amount of the payment or transfer. Must be always positive",
+          "type": "NUMBER"
         },
         {
-          "name": "City",
-          "description": "City where headquarters is located",
-          "type": "STRING",
-          "optional": false
-        },
-        {
-          "name": "Coordinates",
-          "description": "GPS coordinates of the headquarters",
-          "type": "OBJECT",
-          "optional": true,
-          "children": [
-            {
-              "name": "Latitude",
-              "description": "Latitude coordinate",
-              "type": "NUMBER",
-              "optional": false
-            },
-            {
-              "name": "Longitude",
-              "description": "Longitude coordinate",
-              "type": "NUMBER",
-              "optional": false
-            }
-          ]
+          "name": "Currency",
+          "description": "Currency of the transfer e.g.: USD, EUR, PLN etc.",
+          "type": "STRING"
         }
       ]
     },
     {
-      "name": "CEO",
-      "description": "Chief Executive Officer information",
-      "type": "OBJECT",
-      "optional": true,
-      "children": [
-        {
-          "name": "Full Name",
-          "description": "CEO full legal name",
-          "type": "STRING",
-          "optional": false
-        },
-        {
-          "name": "Contact",
-          "description": "CEO contact information",
-          "type": "OBJECT",
-          "optional": true,
-          "children": [
-            {
-              "name": "Email",
-              "description": "CEO email address",
-              "type": "STRING",
-              "optional": false
-            },
-            {
-              "name": "Phone",
-              "description": "CEO phone number",
-              "type": "STRING",
-              "optional": true
-            }
-          ]
-        }
-      ]
+      "name": "Receiver",
+      "description": "Eventual money receiver of the transaction",
+      "type": "STRING"
     },
     {
-      "name": "Employee Count",
-      "description": "Total number of employees",
-      "type": "NUMBER",
-      "optional": false
+      "name": "Title",
+      "description": "What was transaction made for?",
+      "type": "STRING"
     }
   ]
   
@@ -109,4 +50,69 @@ body:json {
 settings {
   encodeUrl: true
   timeout: 0
+}
+
+example {
+  name: example
+  
+  request: {
+    url: {{base_url}}/tables/:tableId/versions
+    method: POST
+    mode: json
+    params:path: {
+      tableId: 484d47a9-7b99-4ef0-94ad-09d23f89fc32
+    }
+  
+    body:json: {
+      [
+        {
+          "name": "Money",
+          "description": "Amount and currency of the transfer",
+          "type": "OBJECT",
+          "children": [
+            {
+              "name": "Amount",
+              "description": "Amount of the payment or transfer. Must be always positive",
+              "type": "NUMBER"
+            },
+            {
+              "name": "Currency",
+              "description": "Currency of the transfer e.g.: USD, EUR, PLN etc.",
+              "type": "STRING"
+            }
+          ]
+        },
+        {
+          "name": "Receiver",
+          "description": "Eventual money receiver of the transaction",
+          "type": "STRING"
+        },
+        {
+          "name": "Title",
+          "description": "What was transaction made for?",
+          "type": "STRING"
+        }
+      ]
+      
+    }
+  }
+  
+  response: {
+    headers: {
+      content-length: 0
+      connection: keep-alive
+    }
+  
+    status: {
+      code: 201
+      text: Created
+    }
+  
+    body: {
+      type: text
+      content: '''
+  
+      '''
+    }
+  }
 }

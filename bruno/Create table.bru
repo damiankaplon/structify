@@ -11,84 +11,51 @@ post {
 }
 
 body:json {
-  [
-    {
-      "name": "Company Name",
-      "type": "STRING",
-      "description": "The official name of the company"
-    },
-    {
-      "name": "Headquarters",
-      "type": "OBJECT",
-      "description": "Company headquarters location details",
-      "children": [
-        {
-          "name": "Street",
-          "type": "STRING",
-          "description": "Street address of headquarters"
-        },
-        {
-          "name": "City",
-          "type": "STRING",
-          "description": "City where headquarters is located"
-        },
-        {
-          "name": "Coordinates",
-          "type": "OBJECT",
-          "description": "GPS coordinates of the headquarters",
-          "children": [
-            {
-              "name": "Latitude",
-              "type": "NUMBER",
-              "description": "Latitude coordinate"
-            },
-            {
-              "name": "Longitude",
-              "type": "NUMBER",
-              "description": "Longitude coordinate"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "CEO",
-      "type": "OBJECT",
-      "description": "Chief Executive Officer information",
-      "children": [
-        {
-          "name": "Full Name",
-          "type": "STRING",
-          "description": "CEO full legal name"
-        },
-        {
-          "name": "Contact",
-          "type": "OBJECT",
-          "description": "CEO contact information",
-          "children": [
-            {
-              "name": "Email",
-              "type": "STRING",
-              "description": "CEO email address"
-            },
-            {
-              "name": "Phone",
-              "type": "STRING",
-              "description": "CEO phone number"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Employee Count",
-      "type": "NUMBER",
-      "description": "Total number of employees"
-    }
-  ]
+  {
+    "name": "Payments",
+    "description": "Record of all personal payments"
+  }
 }
 
 settings {
   encodeUrl: true
   timeout: 0
+}
+
+example {
+  name: example
+  
+  request: {
+    url: {{base_url}}/tables
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "name": "Payments",
+        "description": "Record of all personal payments"
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      content-length: 45
+      content-type: application/json
+      connection: keep-alive
+    }
+  
+    status: {
+      code: 201
+      text: Created
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "id": "484d47a9-7b99-4ef0-94ad-09d23f89fc32"
+        }
+      '''
+    }
+  }
 }

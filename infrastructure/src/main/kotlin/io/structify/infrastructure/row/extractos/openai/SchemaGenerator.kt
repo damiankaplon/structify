@@ -18,23 +18,13 @@ private fun Column.Definition.toProperty(): Pair<String, ChatGptResponsesApiRequ
 	val property = when (this.type) {
 		is ColumnType.StringType -> {
 			ChatGptResponsesApiRequest.Text.Format.Schema.Property(
-				type = buildSet {
-					add("string")
-					if (this@toProperty.optional) {
-						add("null")
-					}
-				},
+				type = "string",
 				description = description
 			)
 		}
 		is ColumnType.NumberType -> {
 			ChatGptResponsesApiRequest.Text.Format.Schema.Property(
-				type = buildSet {
-					add("number")
-					if (this@toProperty.optional) {
-						add("null")
-					}
-				},
+				type = "number",
 				description = description
 			)
 		}
@@ -43,12 +33,7 @@ private fun Column.Definition.toProperty(): Pair<String, ChatGptResponsesApiRequ
 			val childProperties = children.associate { it.toProperty() }
 			val requiredChildren = children.filter { !it.optional }.map { it.name }.toSet()
 			ChatGptResponsesApiRequest.Text.Format.Schema.Property(
-				type = buildSet {
-					add("object")
-					if (this@toProperty.optional) {
-						add("null")
-					}
-				},
+				type = "object",
 				description = description,
 				properties = childProperties,
 				required = requiredChildren,

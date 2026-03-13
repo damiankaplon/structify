@@ -47,7 +47,7 @@ data class ChatGptResponsesApiRequest(
 
 				@Serializable
 				data class Property(
-					val type: Set<String>,
+					val type: String,
 					val description: String,
 					val properties: Map<String, Property>? = null,
 					val required: Set<String>? = null,
