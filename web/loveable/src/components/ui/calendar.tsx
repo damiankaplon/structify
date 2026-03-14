@@ -49,6 +49,7 @@ function Calendar({className, classNames, showOutsideDays = true, ...props}: Cal
         />
     );
 }
+
 Calendar.displayName = "Calendar";
 
 export {Calendar};

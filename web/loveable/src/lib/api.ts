@@ -3,131 +3,131 @@ import axios, {AxiosInstance} from 'axios';
 const API_BASE_URL = '/api';
 
 export const createApiClient = (jwt: string): AxiosInstance => {
-  return axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-      'Authorization': `Bearer ${jwt}`,
-      'Content-Type': 'application/json',
-    },
-  });
+    return axios.create({
+        baseURL: API_BASE_URL,
+        headers: {
+            'Authorization': `Bearer ${jwt}`,
+            'Content-Type': 'application/json',
+        },
+    });
 };
 
 // Types
 export interface Table {
-  id: string;
-  name: string;
-  description?: string;
+    id: string;
+    name: string;
+    description?: string;
 }
 
 export interface ColumnType {
-  type: 'STRING' | 'NUMBER' | 'DATE' | 'BOOLEAN' | 'OBJECT';
-  format: string | null;
+    type: 'STRING' | 'NUMBER' | 'DATE' | 'BOOLEAN' | 'OBJECT';
+    format: string | null;
 }
 
 export interface Column {
-  id: string;
-  name: string;
-  description: string;
-  type: ColumnType;
-  optional: boolean;
-  children: Column[];
+    id: string;
+    name: string;
+    description: string;
+    type: ColumnType;
+    optional: boolean;
+    children: Column[];
 }
 
 export interface TableVersion {
-  id: string;
-  columns: Column[];
-  orderNumber: number;
+    id: string;
+    columns: Column[];
+    orderNumber: number;
 }
 
 export interface Cell {
-  columnDefinitionId: string;
-  value: string;
+    columnDefinitionId: string;
+    value: string;
 }
 
 export interface Row {
-  id: string;
-  cells: Cell[];
+    id: string;
+    cells: Cell[];
 }
 
 export interface CreateColumnRequest {
-  name: string;
-  description: string;
-  type: 'STRING' | 'NUMBER' | 'DATE' | 'BOOLEAN' | 'OBJECT';
-  stringFormat?: string | null;
-  optional?: boolean;
-  children?: CreateColumnRequest[];
+    name: string;
+    description: string;
+    type: 'STRING' | 'NUMBER' | 'DATE' | 'BOOLEAN' | 'OBJECT';
+    stringFormat?: string | null;
+    optional?: boolean;
+    children?: CreateColumnRequest[];
 }
 
 // Utility: get all leaf columns (non-OBJECT) from a column tree
 export const getLeafColumns = (columns: Column[]): Column[] => {
-  const leaves: Column[] = [];
-  for (const col of columns) {
-    if (col.type.type === 'OBJECT' && col.children.length > 0) {
-      leaves.push(...getLeafColumns(col.children));
-    } else {
-      leaves.push(col);
+    const leaves: Column[] = [];
+    for (const col of columns) {
+        if (col.type.type === 'OBJECT' && col.children.length > 0) {
+            leaves.push(...getLeafColumns(col.children));
+        } else {
+            leaves.push(col);
+        }
     }
-  }
-  return leaves;
+    return leaves;
 };
 
 export interface CreateRowRequest {
-  cells: {
-    columnId: string;
-    value: string;
-  }[];
+    cells: {
+        columnId: string;
+        value: string;
+    }[];
 }
 
 // API Functions
 export const tablesApi = {
-  getAll: async (client: AxiosInstance): Promise<Table[]> => {
-    const response = await client.get('/tables');
-    return response.data;
-  },
+    getAll: async (client: AxiosInstance): Promise<Table[]> => {
+        const response = await client.get('/tables');
+        return response.data;
+    },
 
-  create: async (client: AxiosInstance, name: string, description: string): Promise<{ id: string }> => {
-    const response = await client.post('/tables', {name, description});
-    return response.data;
-  },
+    create: async (client: AxiosInstance, name: string, description: string): Promise<{ id: string }> => {
+        const response = await client.post('/tables', {name, description});
+        return response.data;
+    },
 
-  getCurrentVersion: async (client: AxiosInstance, tableId: string): Promise<TableVersion | null> => {
-    try {
-      const response = await client.get(`/tables/${tableId}/versions/current`);
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        return null;
-      }
-      throw error;
-    }
-  },
+    getCurrentVersion: async (client: AxiosInstance, tableId: string): Promise<TableVersion | null> => {
+        try {
+            const response = await client.get(`/tables/${tableId}/versions/current`);
+            return response.data;
+        } catch (error: any) {
+            if (error.response?.status === 404) {
+                return null;
+            }
+            throw error;
+        }
+    },
 
-  createVersion: async (client: AxiosInstance, tableId: string, columns: CreateColumnRequest[]): Promise<void> => {
-    await client.post(`/tables/${tableId}/versions`, columns);
-  },
+    createVersion: async (client: AxiosInstance, tableId: string, columns: CreateColumnRequest[]): Promise<void> => {
+        await client.post(`/tables/${tableId}/versions`, columns);
+    },
 
-  getRows: async (client: AxiosInstance, tableId: string): Promise<Row[]> => {
-    const response = await client.get(`/tables/${tableId}/rows`);
-    return response.data;
-  },
+    getRows: async (client: AxiosInstance, tableId: string): Promise<Row[]> => {
+        const response = await client.get(`/tables/${tableId}/rows`);
+        return response.data;
+    },
 
-  createRow: async (client: AxiosInstance, tableId: string, row: CreateRowRequest): Promise<{ id: string }> => {
-    const response = await client.post(`/tables/${tableId}/rows`, row);
-    return response.data;
-  },
+    createRow: async (client: AxiosInstance, tableId: string, row: CreateRowRequest): Promise<{ id: string }> => {
+        const response = await client.post(`/tables/${tableId}/rows`, row);
+        return response.data;
+    },
 
-  updateRow: async (client: AxiosInstance, tableId: string, rowId: string, row: CreateRowRequest): Promise<void> => {
-    await client.put(`/tables/${tableId}/rows/${rowId}`, row);
-  },
+    updateRow: async (client: AxiosInstance, tableId: string, rowId: string, row: CreateRowRequest): Promise<void> => {
+        await client.put(`/tables/${tableId}/rows/${rowId}`, row);
+    },
 
-  generateRowFromPdf: async (client: AxiosInstance, tableId: string, versionNumber: number, file: File): Promise<void> => {
-    const formData = new FormData();
-    formData.append('file', file);
+    generateRowFromPdf: async (client: AxiosInstance, tableId: string, versionNumber: number, file: File): Promise<void> => {
+        const formData = new FormData();
+        formData.append('file', file);
 
-    await client.post(`/tables/${tableId}/versions/${versionNumber}/rows`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-  },
+        await client.post(`/tables/${tableId}/versions/${versionNumber}/rows`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
 };
