@@ -26,3 +26,50 @@ settings {
   encodeUrl: true
   timeout: 0
 }
+
+example {
+  name: example
+  
+  request: {
+    url: {{base_url}}/tables
+    method: GET
+    mode: none
+    body:json: {
+      [
+        {
+        "name": "colummn one",
+        "description": "test desc",
+        "type": "STRING",
+        "stringFormat": "DATE", 
+        "optional": false
+      }
+      ]
+    }
+  }
+  
+  response: {
+    headers: {
+      content-length: 113
+      content-type: application/json
+      connection: keep-alive
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        [
+          {
+            "id": "484d47a9-7b99-4ef0-94ad-09d23f89fc32",
+            "name": "Payments",
+            "description": "Record of all personal payments"
+          }
+        ]
+      '''
+    }
+  }
+}

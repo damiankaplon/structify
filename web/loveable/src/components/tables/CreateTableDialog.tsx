@@ -12,7 +12,7 @@ import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {Textarea} from '@/components/ui/textarea';
-import {Plus, Loader2} from 'lucide-react';
+import {Loader2, Plus} from 'lucide-react';
 import {useApi} from '@/hooks/useApi';
 import {tablesApi} from '@/lib/api';
 import {useToast} from '@/hooks/use-toast';

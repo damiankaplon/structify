@@ -3,6 +3,7 @@ package io.structify.infrastructure.kotlinx.serialization
 import kotlinx.serialization.json.Json
 
 val json = Json {
+	explicitNulls = false
 	encodeDefaults = true
 	isLenient = true
 	allowSpecialFloatingPointValues = true

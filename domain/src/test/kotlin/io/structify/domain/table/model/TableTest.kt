@@ -120,4 +120,102 @@ internal class TableTest {
 			}
 		)
 	}
+
+	@Test
+	fun `should reuse column when definition with children matches`() {
+		// given
+		val userId = UUID.randomUUID()
+		val table = Table(
+			userId = userId,
+			name = "Test Table",
+		)
+
+		val childDef = Column.Definition(
+			name = "child",
+			description = "Child column",
+			type = ColumnType.StringType(),
+			optional = false
+		)
+
+		val parentDef = Column.Definition(
+			name = "parent",
+			description = "Parent column",
+			type = ColumnType.ObjectType,
+			optional = false,
+			children = listOf(childDef)
+		)
+
+		// when - create first version with hierarchical structure
+		table.update(listOf(parentDef))
+		val firstVersion = table.getCurrentVersion()
+		val firstParent = firstVersion.columns.first()
+		val firstChild = firstParent.children.first()
+
+		// and - create second version with exact same definition
+		table.update(listOf(parentDef))
+		val secondVersion = table.getCurrentVersion()
+		val secondParent = secondVersion.columns.first()
+		val secondChild = secondParent.children.first()
+
+		// then - columns should be reused (same IDs)
+		assertThat(firstParent.id).isEqualTo(secondParent.id)
+		assertThat(firstChild.id).isEqualTo(secondChild.id)
+	}
+
+	@Test
+	fun `should create new column when child definition changes`() {
+		// given
+		val userId = UUID.randomUUID()
+		val table = Table(
+			userId = userId,
+			name = "Test Table",
+		)
+
+		val oldChildDef = Column.Definition(
+			name = "child",
+			description = "Old description",
+			type = ColumnType.StringType(),
+			optional = false
+		)
+
+		val oldParentDef = Column.Definition(
+			name = "parent",
+			description = "Parent column",
+			type = ColumnType.ObjectType,
+			optional = false,
+			children = listOf(oldChildDef)
+		)
+
+		// when - create first version
+		table.update(listOf(oldParentDef))
+		val firstVersion = table.getCurrentVersion()
+		val firstParent = firstVersion.columns.first()
+		val firstChild = firstParent.children.first()
+
+		// and - create second version with changed child description
+		val newChildDef = Column.Definition(
+			name = "child",
+			description = "New description",
+			type = ColumnType.StringType(),
+			optional = false
+		)
+
+		val newParentDef = Column.Definition(
+			name = "parent",
+			description = "Parent column",
+			type = ColumnType.ObjectType,
+			optional = false,
+			children = listOf(newChildDef)
+		)
+
+		table.update(listOf(newParentDef))
+		val secondVersion = table.getCurrentVersion()
+		val secondParent = secondVersion.columns.first()
+		val secondChild = secondParent.children.first()
+
+		// then - new columns should be created (different IDs)
+		assertThat(firstParent.id).isNotEqualTo(secondParent.id)
+		assertThat(firstChild.id).isNotEqualTo(secondChild.id)
+		assertThat(secondChild.definition.description).isEqualTo("New description")
+	}
 }

@@ -11,7 +11,7 @@ get {
 }
 
 params:path {
-  tableId: f8c66d2e-3666-42e8-ac0d-a8d08ada2fdd
+  tableId: 484d47a9-7b99-4ef0-94ad-09d23f89fc32
 }
 
 body:json {
@@ -26,4 +26,93 @@ body:json {
 settings {
   encodeUrl: true
   timeout: 0
+}
+
+example {
+  name: example
+  
+  request: {
+    url: {{base_url}}/tables/:tableId/rows
+    method: GET
+    mode: json
+    params:path: {
+      tableId: 484d47a9-7b99-4ef0-94ad-09d23f89fc32
+    }
+  
+    body:json: {
+      {
+        "cells": [
+          {"columnId": 1, "value": "some value"}
+        ]
+      }
+      
+    }
+  }
+  
+  response: {
+    headers: {
+      content-length: 833
+      content-type: application/json
+      connection: keep-alive
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        [
+          {
+            "id": "747fd98f-ec52-4888-9285-7d7d445ad35c",
+            "cells": [
+              {
+                "columnDefinitionId": "c34f10a4-a322-4c9f-8687-cb803da2421e",
+                "value": "15.99"
+              },
+              {
+                "columnDefinitionId": "c0352a23-9058-413b-b17c-dfe33e021d6c",
+                "value": "EUR"
+              },
+              {
+                "columnDefinitionId": "127b84ea-a63c-4535-810d-5138bd3d4e8f",
+                "value": "Lidl"
+              },
+              {
+                "columnDefinitionId": "f5b10982-4e4d-4fb1-b4ee-0ede29a22d88",
+                "value": "Groceries"
+              }
+            ]
+          },
+          {
+            "id": "8b3ba3c8-0bc3-4d45-8ff9-3f4757474d95",
+            "cells": [
+              {
+                "columnDefinitionId": "6d2d77cb-83d6-447e-82b9-34c889cfce86",
+                "value": ""
+              },
+              {
+                "columnDefinitionId": "c34f10a4-a322-4c9f-8687-cb803da2421e",
+                "value": "25.00"
+              },
+              {
+                "columnDefinitionId": "c0352a23-9058-413b-b17c-dfe33e021d6c",
+                "value": "PLN"
+              },
+              {
+                "columnDefinitionId": "127b84ea-a63c-4535-810d-5138bd3d4e8f",
+                "value": "Wojciech Kapłon"
+              },
+              {
+                "columnDefinitionId": "f5b10982-4e4d-4fb1-b4ee-0ede29a22d88",
+                "value": "Abonament telefonu"
+              }
+            ]
+          }
+        ]
+      '''
+    }
+  }
 }

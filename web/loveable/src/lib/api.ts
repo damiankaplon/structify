@@ -20,7 +20,7 @@ export interface Table {
 }
 
 export interface ColumnType {
-    type: 'STRING' | 'NUMBER' | 'DATE' | 'BOOLEAN';
+    type: 'STRING' | 'NUMBER' | 'DATE' | 'BOOLEAN' | 'OBJECT';
     format: string | null;
 }
 
@@ -30,6 +30,7 @@ export interface Column {
     description: string;
     type: ColumnType;
     optional: boolean;
+    children: Column[];
 }
 
 export interface TableVersion {
@@ -51,10 +52,24 @@ export interface Row {
 export interface CreateColumnRequest {
     name: string;
     description: string;
-    type: 'STRING' | 'NUMBER' | 'DATE' | 'BOOLEAN';
-    stringFormat: string | null;
-    optional: boolean;
+    type: 'STRING' | 'NUMBER' | 'DATE' | 'BOOLEAN' | 'OBJECT';
+    stringFormat?: string | null;
+    optional?: boolean;
+    children?: CreateColumnRequest[];
 }
+
+// Utility: get all leaf columns (non-OBJECT) from a column tree
+export const getLeafColumns = (columns: Column[]): Column[] => {
+    const leaves: Column[] = [];
+    for (const col of columns) {
+        if (col.type.type === 'OBJECT' && col.children.length > 0) {
+            leaves.push(...getLeafColumns(col.children));
+        } else {
+            leaves.push(col);
+        }
+    }
+    return leaves;
+};
 
 export interface CreateRowRequest {
     cells: {

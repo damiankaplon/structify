@@ -1,6 +1,6 @@
-import React, {useState, useRef} from 'react';
+import React, {useRef, useState} from 'react';
 import {Button} from '@/components/ui/button';
-import {Upload, FileText, Loader2, X} from 'lucide-react';
+import {FileText, Loader2, Upload, X} from 'lucide-react';
 import {useApi} from '@/hooks/useApi';
 import {tablesApi} from '@/lib/api';
 import {useToast} from '@/hooks/use-toast';

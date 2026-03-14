@@ -1,0 +1,41 @@
+meta {
+  name: Generate a row from pdf file
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{base_url}}/tables/:tableId/versions/:versionOrderNr/rows
+  body: multipartForm
+  auth: inherit
+}
+
+params:path {
+  versionOrderNr: 1
+  tableId: 484d47a9-7b99-4ef0-94ad-09d23f89fc32
+}
+
+body:json {
+  {
+    "cells": [
+      {
+        "columnId": "b055dd62-0d6f-44fb-81a5-85a644e6d72c",
+        "value": "John"
+      },
+      {
+        "columnId": "c84d30fb-dc13-475c-b4b7-3f98c29e224d",
+        "value": "Doe"
+      }
+    ]
+  }
+  
+}
+
+body:multipart-form {
+  file: @file(/Users/damian.kaplonsportalliance.com/Downloads/Payment confirmation_20251212_235243.pdf)
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

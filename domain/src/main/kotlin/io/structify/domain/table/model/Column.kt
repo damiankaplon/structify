@@ -5,6 +5,7 @@ import java.util.UUID
 data class Column(
 	val id: UUID = UUID.randomUUID(),
 	val definition: Definition,
+	val children: List<Column> = emptyList(),
 ) {
 
 	data class Definition(
@@ -12,5 +13,6 @@ data class Column(
 		val description: String,
 		val type: ColumnType,
 		val optional: Boolean,
+		val children: List<Definition> = emptyList(),
 	)
 }

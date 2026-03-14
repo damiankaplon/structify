@@ -24,6 +24,7 @@ interface VersionReadModelRepository {
 		val description: String,
 		val type: ColumnType,
 		val optional: Boolean,
+		val children: List<ColumnDefinition> = emptyList(),
 	)
 
 	@Serializable

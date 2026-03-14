@@ -12,13 +12,50 @@ post {
 
 body:json {
   {
-    "name": "test table",
-    "description": "test description"
+    "name": "Payments",
+    "description": "Record of all personal payments"
   }
-  
 }
 
 settings {
   encodeUrl: true
   timeout: 0
+}
+
+example {
+  name: example
+  
+  request: {
+    url: {{base_url}}/tables
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "name": "Payments",
+        "description": "Record of all personal payments"
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      content-length: 45
+      content-type: application/json
+      connection: keep-alive
+    }
+  
+    status: {
+      code: 201
+      text: Created
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "id": "484d47a9-7b99-4ef0-94ad-09d23f89fc32"
+        }
+      '''
+    }
+  }
 }

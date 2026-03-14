@@ -11,12 +11,34 @@ class Table(
 	var versions = emptySet<Version>(); private set
 
 	fun update(definitions: List<Column.Definition>) {
+		ColumnHierarchyValidation.validate(definitions)
+
+		val newVersionColumns = definitions.map { definition -> definition.getColumn() }
+
 		val recent: Int = versions.maxOfOrNull(Version::orderNumber) ?: 0
-		val allColumns = versions.flatMap(Version::columns)
-		val newVersionColumns = definitions.map { definition ->
-			allColumns.firstOrNull { it.definition == definition } ?: Column(definition = definition)
-		}
 		versions = versions + Version(columns = newVersionColumns, orderNumber = recent + 1)
+	}
+
+	private fun Version.flattenColumns(): List<Column> {
+		return columns.flatMap { it.flatten() }
+	}
+
+	private fun Column.flatten(): List<Column> {
+		return listOf(this) + children.flatMap { it.flatten() }
+	}
+
+	private fun Column.Definition.getColumn(allColumns: List<Column> = versions.flatMap { it.flattenColumns() }): Column {
+		val existing = allColumns.firstOrNull { it.definition == this }
+		if (existing != null) {
+			return existing
+		}
+		val children = this.children.map { childDefinition ->
+			childDefinition.getColumn(allColumns)
+		}
+		return Column(
+			definition = this,
+			children = children
+		)
 	}
 
 	fun getCurrentVersion(): Version = versions.maxBy { it.orderNumber }

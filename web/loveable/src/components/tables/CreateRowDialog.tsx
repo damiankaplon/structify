@@ -11,9 +11,9 @@ import {
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
-import {Plus, Loader2} from 'lucide-react';
+import {Loader2, Plus} from 'lucide-react';
 import {useApi} from '@/hooks/useApi';
-import {tablesApi, Column} from '@/lib/api';
+import {Column, getLeafColumns, tablesApi} from '@/lib/api';
 import {useToast} from '@/hooks/use-toast';
 
 interface CreateRowDialogProps {
@@ -29,11 +29,24 @@ const CreateRowDialog: React.FC<CreateRowDialogProps> = ({tableId, columns, onRo
     const api = useApi();
     const {toast} = useToast();
 
+    const leafColumns = getLeafColumns(columns);
+
+    const getColumnPath = (columns: Column[], targetId: string, path: string[] = []): string[] | null => {
+        for (const col of columns) {
+            if (col.id === targetId) return [...path, col.name];
+            if (col.children?.length) {
+                const found = getColumnPath(col.children, targetId, [...path, col.name]);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const requiredColumns = columns.filter((col) => !col.optional);
-        const missingRequired = requiredColumns.filter((col) => !values[col.id]?.trim());
+        const requiredLeaves = leafColumns.filter((col) => !col.optional);
+        const missingRequired = requiredLeaves.filter((col) => !values[col.id]?.trim());
 
         if (missingRequired.length > 0) {
             toast({
@@ -51,19 +64,12 @@ const CreateRowDialog: React.FC<CreateRowDialogProps> = ({tableId, columns, onRo
                 .map(([columnId, value]) => ({columnId, value}));
 
             await tablesApi.createRow(api, tableId, {cells});
-            toast({
-                title: 'Success',
-                description: 'Row created successfully',
-            });
+            toast({title: 'Success', description: 'Row created successfully'});
             setOpen(false);
             setValues({});
             onRowCreated();
         } catch (error) {
-            toast({
-                title: 'Error',
-                description: 'Failed to create row',
-                variant: 'destructive',
-            });
+            toast({title: 'Error', description: 'Failed to create row', variant: 'destructive'});
         } finally {
             setIsLoading(false);
         }
@@ -86,28 +92,28 @@ const CreateRowDialog: React.FC<CreateRowDialogProps> = ({tableId, columns, onRo
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
-                        {columns.map((column) => (
-                            <div key={column.id} className="grid gap-2">
-                                <Label htmlFor={column.id}>
-                                    {column.name}
-                                    {!column.optional && <span className="text-destructive ml-1">*</span>}
-                                </Label>
-                                <Input
-                                    id={column.id}
-                                    value={values[column.id] || ''}
-                                    onChange={(e) =>
-                                        setValues({...values, [column.id]: e.target.value})
-                                    }
-                                    placeholder={column.description}
-                                />
-                                <p className="text-xs text-muted-foreground">{column.description}</p>
-                            </div>
-                        ))}
+                        {leafColumns.map((column) => {
+                            const path = getColumnPath(columns, column.id);
+                            const label = path ? path.join(' → ') : column.name;
+                            return (
+                                <div key={column.id} className="grid gap-2">
+                                    <Label htmlFor={column.id}>
+                                        {label}
+                                        {!column.optional && <span className="text-destructive ml-1">*</span>}
+                                    </Label>
+                                    <Input
+                                        id={column.id}
+                                        value={values[column.id] || ''}
+                                        onChange={(e) => setValues({...values, [column.id]: e.target.value})}
+                                        placeholder={column.description}
+                                    />
+                                    <p className="text-xs text-muted-foreground">{column.description}</p>
+                                </div>
+                            );
+                        })}
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                            Cancel
-                        </Button>
+                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
                         <Button type="submit" disabled={isLoading}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                             Create Row

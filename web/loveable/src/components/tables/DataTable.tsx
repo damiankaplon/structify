@@ -1,13 +1,6 @@
 import React from 'react';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import {Column, Row} from '@/lib/api';
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from '@/components/ui/table';
+import {Column, getLeafColumns, Row} from '@/lib/api';
 import {Badge} from '@/components/ui/badge';
 
 interface DataTableProps {
@@ -16,6 +9,8 @@ interface DataTableProps {
 }
 
 const DataTable: React.FC<DataTableProps> = ({columns, rows}) => {
+    const leafColumns = getLeafColumns(columns);
+
     const getCellValue = (row: Row, columnId: string): string => {
         const cell = row.cells.find((c) => c.columnDefinitionId === columnId);
         return cell?.value || '-';
@@ -30,11 +25,11 @@ const DataTable: React.FC<DataTableProps> = ({columns, rows}) => {
     }
 
     return (
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-x-auto">
             <Table>
                 <TableHeader>
                     <TableRow>
-                        {columns.map((column) => (
+                        {leafColumns.map((column) => (
                             <TableHead key={column.id}>
                                 <div className="flex items-center gap-2">
                                     {column.name}
@@ -51,7 +46,7 @@ const DataTable: React.FC<DataTableProps> = ({columns, rows}) => {
                 <TableBody>
                     {rows.map((row) => (
                         <TableRow key={row.id}>
-                            {columns.map((column) => (
+                            {leafColumns.map((column) => (
                                 <TableCell key={column.id}>
                                     {getCellValue(row, column.id)}
                                 </TableCell>

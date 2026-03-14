@@ -12,6 +12,9 @@ export default defineConfig(({mode}) => ({
                 target: 'http://localhost:8080',
                 changeOrigin: true,
             }
+        },
+        hmr: {
+            overlay: false,
         }
     },
     plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),

@@ -55,20 +55,46 @@ class VersionReadModelExposedRepository : VersionReadModelRepository {
 	}
 
 	private fun fetchColumns(versionId: UUID): List<ColumnDefinition> {
-		return TableColumnsTable.join(VersionColumnTable, JoinType.INNER, VersionColumnTable.columnDefinitionId, TableColumnsTable.id)
+		// Fetch only top-level columns for this version
+		val topLevelColumnIds = TableColumnsTable.join(
+			VersionColumnTable,
+			JoinType.INNER,
+			VersionColumnTable.columnDefinitionId,
+			TableColumnsTable.id
+		)
 			.selectAll()
 			.where { VersionColumnTable.versionId eq versionId }
-			.map { cRow ->
-				ColumnDefinition(
-					id = cRow[TableColumnsTable.id].toKotlinx(),
-					name = cRow[TableColumnsTable.name],
-					description = cRow[TableColumnsTable.description],
-					type = ColumnType(
-						type = cRow[TableColumnsTable.typeName],
-						format = cRow[TableColumnsTable.stringFormat]
-					),
-					optional = cRow[TableColumnsTable.optional]
-				)
-			}
+			.map { cRow -> cRow[TableColumnsTable.id] }
+
+		return topLevelColumnIds.map { columnId ->
+			fetchColumnWithChildren(columnId)
+		}
+	}
+
+	private fun fetchColumnWithChildren(columnId: UUID): ColumnDefinition {
+		val row = TableColumnsTable.selectAll()
+			.where { TableColumnsTable.id eq columnId }
+			.single()
+
+		// Recursively fetch child columns
+		val childIds = TableColumnsTable.selectAll()
+			.where { TableColumnsTable.parentColumnId eq columnId }
+			.map { it[TableColumnsTable.id] }
+
+		val children = childIds.map { childId ->
+			fetchColumnWithChildren(childId)
+		}
+
+		return ColumnDefinition(
+			id = row[TableColumnsTable.id].toKotlinx(),
+			name = row[TableColumnsTable.name],
+			description = row[TableColumnsTable.description],
+			type = ColumnType(
+				type = row[TableColumnsTable.typeName],
+				format = row[TableColumnsTable.stringFormat]
+			),
+			optional = row[TableColumnsTable.optional],
+			children = children
+		)
 	}
 }

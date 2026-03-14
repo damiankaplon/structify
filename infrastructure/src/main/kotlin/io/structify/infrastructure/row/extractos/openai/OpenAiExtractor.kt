@@ -10,9 +10,11 @@ import io.ktor.http.path
 import io.structify.domain.row.Cell
 import io.structify.domain.row.RowExtractor
 import io.structify.domain.table.model.Column
+import io.structify.domain.table.model.ColumnType
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 class OpenAiExtractor(
 	private val chatGptHttpClient: HttpClient,
@@ -53,11 +55,36 @@ class OpenAiExtractor(
 		}
 		val openAiResult = response.body<ChatGptResponsesApiResponse>().output.first { it.content != null }.content!!.first().text
 			.let { json.parseToJsonElement(it) }
+			.jsonObject
+		
 		val cells = columns.map { column ->
-			val columnId = column.id
-			val cellValue = openAiResult.jsonObject.getValue(column.definition.name).jsonPrimitive.content
-			Cell(columnId, cellValue)
+			extractCell(column, openAiResult)
 		}
 		return cells.toSet()
+	}
+
+	private fun extractCell(column: Column, jsonData: JsonObject): Cell {
+		val columnId = column.id
+		val jsonValue = jsonData.getValue(column.definition.name)
+
+		return when (column.definition.type) {
+			is ColumnType.StringType, is ColumnType.NumberType -> {
+				// Leaf column - extract primitive value
+				val cellValue = if (jsonValue is JsonPrimitive) {
+					jsonValue.content
+				} else {
+					jsonValue.toString()
+				}
+				Cell(columnId, cellValue)
+			}
+			is ColumnType.ObjectType -> {
+				// Object column - recursively extract children
+				val nestedObject = jsonValue as JsonObject
+				val childCells = column.children.map { childColumn ->
+					extractCell(childColumn, nestedObject)
+				}.toSet()
+				Cell(columnId, "", childCells)
+			}
+		}
 	}
 }

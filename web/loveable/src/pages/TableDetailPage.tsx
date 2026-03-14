@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {useParams, Link} from 'react-router-dom';
+import {Link, useParams} from 'react-router-dom';
 import {useQuery} from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import EditColumnsDialog from '@/components/tables/EditColumnsDialog';
@@ -11,9 +11,38 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/compo
 import {Badge} from '@/components/ui/badge';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
 import {useApi} from '@/hooks/useApi';
-import {tablesApi, TableVersion, Row} from '@/lib/api';
-import {ArrowLeft, Loader2, Columns3, Settings, FileSpreadsheet, AlertCircle} from 'lucide-react';
+import {Column, Row, tablesApi, TableVersion} from '@/lib/api';
+import {AlertCircle, ArrowLeft, Columns3, FileSpreadsheet, Loader2, Settings} from 'lucide-react';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
+
+const ColumnTree: React.FC<{ columns: Column[]; depth: number }> = ({columns, depth}) => (
+    <div className="space-y-3">
+        {columns.map((column, index) => (
+            <div
+                key={column.id}
+                className="flex flex-col gap-2 p-4 rounded-lg border bg-card"
+                style={{marginLeft: `${depth * 1.5}rem`}}
+            >
+                <div className="flex items-start gap-4">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-medium">
+                        {index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-medium text-foreground">{column.name}</h4>
+                            <Badge variant="secondary">{column.type.type}</Badge>
+                            {column.optional && <Badge variant="outline">Optional</Badge>}
+                        </div>
+                        <p className="mt-1 text-sm text-muted-foreground">{column.description}</p>
+                    </div>
+                </div>
+                {column.type.type === 'OBJECT' && column.children?.length > 0 && (
+                    <ColumnTree columns={column.children} depth={0}/>
+                )}
+            </div>
+        ))}
+    </div>
+);
 
 const TableDetailPage: React.FC = () => {
     const {tableId} = useParams<{ tableId: string }>();
@@ -155,30 +184,7 @@ const TableDetailPage: React.FC = () => {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="space-y-4">
-                                        {version.columns.map((column, index) => (
-                                            <div
-                                                key={column.id}
-                                                className="flex items-start gap-4 p-4 rounded-lg border bg-card"
-                                            >
-                                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-medium">
-                                                    {index + 1}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <h4 className="font-medium text-foreground">{column.name}</h4>
-                                                        <Badge variant="secondary">{column.type.type}</Badge>
-                                                        {column.optional && (
-                                                            <Badge variant="outline">Optional</Badge>
-                                                        )}
-                                                    </div>
-                                                    <p className="mt-1 text-sm text-muted-foreground">
-                                                        {column.description}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
+                                    <ColumnTree columns={version.columns} depth={0}/>
                                 </CardContent>
                             </Card>
                         </TabsContent>

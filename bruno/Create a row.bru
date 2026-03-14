@@ -11,19 +11,27 @@ post {
 }
 
 params:path {
-  tableId: f8c66d2e-3666-42e8-ac0d-a8d08ada2fdd
+  tableId: 484d47a9-7b99-4ef0-94ad-09d23f89fc32
 }
 
 body:json {
   {
     "cells": [
       {
-        "columnId": "b055dd62-0d6f-44fb-81a5-85a644e6d72c",
-        "value": "John"
+        "columnId": "c34f10a4-a322-4c9f-8687-cb803da2421e",
+        "value": 15.99
       },
       {
-        "columnId": "c84d30fb-dc13-475c-b4b7-3f98c29e224d",
-        "value": "Doe"
+        "columnId": "c0352a23-9058-413b-b17c-dfe33e021d6c",
+        "value": "EUR"
+      },
+      {
+        "columnId": "127b84ea-a63c-4535-810d-5138bd3d4e8f",
+        "value": "Lidl"
+      },
+      {
+        "columnId": "f5b10982-4e4d-4fb1-b4ee-0ede29a22d88",
+        "value": "Groceries"
       }
     ]
   }
@@ -33,4 +41,63 @@ body:json {
 settings {
   encodeUrl: true
   timeout: 0
+}
+
+example {
+  name: example
+  
+  request: {
+    url: {{base_url}}/tables/:tableId/rows
+    method: POST
+    mode: json
+    params:path: {
+      tableId: 484d47a9-7b99-4ef0-94ad-09d23f89fc32
+    }
+  
+    body:json: {
+      {
+        "cells": [
+          {
+            "columnId": "c34f10a4-a322-4c9f-8687-cb803da2421e",
+            "value": 15.99
+          },
+          {
+            "columnId": "c0352a23-9058-413b-b17c-dfe33e021d6c",
+            "value": "EUR"
+          },
+          {
+            "columnId": "127b84ea-a63c-4535-810d-5138bd3d4e8f",
+            "value": "Lidl"
+          },
+          {
+            "columnId": "f5b10982-4e4d-4fb1-b4ee-0ede29a22d88",
+            "value": "Groceries"
+          }
+        ]
+      }
+      
+    }
+  }
+  
+  response: {
+    headers: {
+      content-length: 45
+      content-type: application/json
+      connection: keep-alive
+    }
+  
+    status: {
+      code: 201
+      text: Created
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "id": "747fd98f-ec52-4888-9285-7d7d445ad35c"
+        }
+      '''
+    }
+  }
 }

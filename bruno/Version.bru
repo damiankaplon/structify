@@ -11,29 +11,108 @@ post {
 }
 
 params:path {
-  tableId: f8c66d2e-3666-42e8-ac0d-a8d08ada2fdd
+  tableId: 484d47a9-7b99-4ef0-94ad-09d23f89fc32
 }
 
 body:json {
   [
     {
-      "name": "First name",
-      "description": "First name",
-      "type": "STRING",
-      "stringFormat": null,
-      "optional": false
+      "name": "Money",
+      "description": "Amount and currency of the transfer",
+      "type": "OBJECT",
+      "children": [
+        {
+          "name": "Amount",
+          "description": "Amount of the payment or transfer. Must be always positive",
+          "type": "NUMBER"
+        },
+        {
+          "name": "Currency",
+          "description": "Currency of the transfer e.g.: USD, EUR, PLN etc.",
+          "type": "STRING"
+        }
+      ]
     },
     {
-      "name": "Last name",
-      "description": "Last name",
-      "type": "STRING",
-      "stringFormat": null,
-      "optional": false
+      "name": "Receiver",
+      "description": "Eventual money receiver of the transaction",
+      "type": "STRING"
+    },
+    {
+      "name": "Title",
+      "description": "What was transaction made for?",
+      "type": "STRING"
     }
   ]
+  
 }
 
 settings {
   encodeUrl: true
   timeout: 0
+}
+
+example {
+  name: example
+  
+  request: {
+    url: {{base_url}}/tables/:tableId/versions
+    method: POST
+    mode: json
+    params:path: {
+      tableId: 484d47a9-7b99-4ef0-94ad-09d23f89fc32
+    }
+  
+    body:json: {
+      [
+        {
+          "name": "Money",
+          "description": "Amount and currency of the transfer",
+          "type": "OBJECT",
+          "children": [
+            {
+              "name": "Amount",
+              "description": "Amount of the payment or transfer. Must be always positive",
+              "type": "NUMBER"
+            },
+            {
+              "name": "Currency",
+              "description": "Currency of the transfer e.g.: USD, EUR, PLN etc.",
+              "type": "STRING"
+            }
+          ]
+        },
+        {
+          "name": "Receiver",
+          "description": "Eventual money receiver of the transaction",
+          "type": "STRING"
+        },
+        {
+          "name": "Title",
+          "description": "What was transaction made for?",
+          "type": "STRING"
+        }
+      ]
+      
+    }
+  }
+  
+  response: {
+    headers: {
+      content-length: 0
+      connection: keep-alive
+    }
+  
+    status: {
+      code: 201
+      text: Created
+    }
+  
+    body: {
+      type: text
+      content: '''
+  
+      '''
+    }
+  }
 }
