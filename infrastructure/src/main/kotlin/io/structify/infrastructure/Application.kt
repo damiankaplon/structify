@@ -1,17 +1,15 @@
 package io.structify.infrastructure
 
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.Application
-import io.ktor.server.application.install
-import io.ktor.server.http.content.react
-import io.ktor.server.http.content.singlePageApplication
-import io.ktor.server.plugins.statuspages.StatusPages
-import io.ktor.server.response.respondText
-import io.ktor.server.routing.route
-import io.ktor.server.routing.routing
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.http.content.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import io.structify.domain.db.TransactionalRunner
 import io.structify.domain.row.RowExtractor
 import io.structify.domain.row.RowRepository
+import io.structify.domain.table.TableCommandHandler
 import io.structify.domain.table.TableRepository
 import io.structify.infrastructure.db.NoEntityFoundExceptionHandler
 import io.structify.infrastructure.row.api.rowRoutes
@@ -21,6 +19,8 @@ import io.structify.infrastructure.security.NoJwtExceptionHandler
 import io.structify.infrastructure.security.SecuredRouting
 import io.structify.infrastructure.security.installOAuthAuth
 import io.structify.infrastructure.table.api.tableRoutes
+import io.structify.infrastructure.table.event.TableCreatedDomainEventHandler
+import io.structify.infrastructure.table.event.TableVersionCreatedReadModelEventHandler
 import io.structify.infrastructure.table.readmodel.TableReadModelRepository
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository
 
@@ -36,9 +36,12 @@ fun Application.module() {
 	installApp(
 		oauthModule.securedRouting,
 		appComponent.transactionalRunner(),
+		appComponent.tableCommandHandler(),
 		appComponent.tableRepository(),
 		appComponent.versionReadModelRepository(),
 		appComponent.tableReadModelRepository(),
+		appComponent.tableCreatedDomainEventHandler(),
+		appComponent.tableVersionCreatedReadModelEventHandler(),
 		appComponent.rowRepository(),
 		appComponent.rowReadModelRepository(),
 		appComponent.rowExtractor(),
@@ -56,9 +59,12 @@ fun Application.module() {
 fun Application.installApp(
 	securedRouting: SecuredRouting,
 	transactionalRunner: TransactionalRunner,
+	tableCommandHandler: TableCommandHandler,
 	tableRepository: TableRepository,
 	versionReadModelRepository: VersionReadModelRepository,
 	tableReadModelRepository: TableReadModelRepository,
+	tableCreatedDomainEventHandler: TableCreatedDomainEventHandler,
+	tableVersionCreatedReadModelEventHandler: TableVersionCreatedReadModelEventHandler,
 	rowRepository: RowRepository,
 	rowReadModelRepository: RowReadModelRepository,
 	rowExtractor: RowExtractor,
@@ -72,15 +78,30 @@ fun Application.installApp(
 		}
 		exception(NoEntityFoundExceptionHandler)
 	}
-	installRouting(securedRouting, transactionalRunner, tableRepository, versionReadModelRepository, tableReadModelRepository, rowRepository, rowReadModelRepository, rowExtractor)
+	installRouting(
+		securedRouting,
+		transactionalRunner,
+		tableCommandHandler,
+		tableRepository,
+		versionReadModelRepository,
+		tableReadModelRepository,
+		tableCreatedDomainEventHandler,
+		tableVersionCreatedReadModelEventHandler,
+		rowRepository,
+		rowReadModelRepository,
+		rowExtractor,
+	)
 }
 
 fun Application.installRouting(
 	securedRouting: SecuredRouting,
 	transactionalRunner: TransactionalRunner,
+	tableCommandHandler: TableCommandHandler,
 	tableRepository: TableRepository,
 	versionReadModelRepository: VersionReadModelRepository,
 	tableReadModelRepository: TableReadModelRepository,
+	tableCreatedDomainEventHandler: TableCreatedDomainEventHandler,
+	tableVersionCreatedReadModelEventHandler: TableVersionCreatedReadModelEventHandler,
 	rowRepository: RowRepository,
 	rowReadModelRepository: RowReadModelRepository,
 	rowExtractor: RowExtractor,
@@ -90,9 +111,11 @@ fun Application.installRouting(
 			route("/api") {
 				tableRoutes(
 					transactionalRunner,
-					tableRepository,
+					tableCommandHandler,
 					versionReadModelRepository,
 					tableReadModelRepository,
+					tableCreatedDomainEventHandler,
+					tableVersionCreatedReadModelEventHandler,
 				)
 				rowRoutes(
 					transactionalRunner,

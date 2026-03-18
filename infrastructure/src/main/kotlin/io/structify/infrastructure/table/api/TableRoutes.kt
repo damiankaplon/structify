@@ -1,31 +1,34 @@
 package io.structify.infrastructure.table.api
 
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.request.receive
-import io.ktor.server.response.respond
-import io.ktor.server.routing.Route
-import io.ktor.server.routing.get
-import io.ktor.server.routing.post
-import io.ktor.server.routing.route
-import io.ktor.util.reflect.typeInfo
+import io.ktor.http.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import io.ktor.util.reflect.*
 import io.structify.domain.db.TransactionalRunner
-import io.structify.domain.table.TableRepository
+import io.structify.domain.table.CreateTableVersionCommand
+import io.structify.domain.table.TableCommandHandler
+import io.structify.domain.table.TableCreated
+import io.structify.domain.table.TableVersionCreated
 import io.structify.domain.table.model.Column
 import io.structify.domain.table.model.ColumnType
 import io.structify.domain.table.model.StringFormat
-import io.structify.domain.table.model.Table
 import io.structify.infrastructure.security.jwtPrincipalOrThrow
+import io.structify.infrastructure.table.event.TableCreatedDomainEventHandler
+import io.structify.infrastructure.table.event.TableVersionCreatedReadModelEventHandler
 import io.structify.infrastructure.table.readmodel.TableReadModelRepository
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository.Version
 import kotlinx.serialization.Serializable
-import java.util.UUID
+import java.util.*
 
 fun Route.tableRoutes(
 	transactionalRunner: TransactionalRunner,
-	tableRepository: TableRepository,
+	tableCommandHandler: TableCommandHandler,
 	versionReadModelRepository: VersionReadModelRepository,
 	tableReadModelRepository: TableReadModelRepository,
+	tableCreatedDomainEventHandler: TableCreatedDomainEventHandler,
+	tableVersionCreatedReadModelEventHandler: TableVersionCreatedReadModelEventHandler,
 ) {
 	route("/tables") {
 		get {
@@ -42,17 +45,22 @@ fun Route.tableRoutes(
 				val principal = call.jwtPrincipalOrThrow()
 				val request = call.receive<CreateTableRequest>()
 
-				val table = Table(
-					userId = principal.userId,
-					name = request.name,
+				val tableId = UUID.randomUUID()
+
+				// Step 1: CRUD operation — store in read model
+				tableReadModelRepository.create(tableId, principal.userId, request.name, request.description)
+
+				// Step 2: Pass event to domain handler — creates the Table aggregate
+				tableCreatedDomainEventHandler.handle(
+					TableCreated(
+						tableId = tableId,
+						userId = principal.userId,
+						name = request.name,
+					)
 				)
 
-				tableRepository.persist(table)
-				tableReadModelRepository.addDescription(table.id, request.description)
-
-				call.respond(HttpStatusCode.Created, message = TableId(table.id.toString()))
+				call.respond(HttpStatusCode.Created, message = TableId(tableId.toString()))
 			}
-
 		}
 
 		post("/{tableId}/versions") {
@@ -60,12 +68,19 @@ fun Route.tableRoutes(
 				val principal = call.jwtPrincipalOrThrow()
 				val tableId = UUID.fromString(call.parameters["tableId"])
 				val request = call.receive<List<ColumnDefinitionDto>>()
+				val columns = request.map(ColumnDefinitionDto::toDomain)
 
-				val table = tableRepository.findByIdThrow(principal.userId, tableId)
+				// Step 1: Domain operation — validation + state change, returns event
+				val event: TableVersionCreated = tableCommandHandler.handle(
+					CreateTableVersionCommand(
+						userId = principal.userId,
+						tableId = tableId,
+						columns = columns,
+					)
+				)
 
-				val columns: List<Column.Definition> = request.map(ColumnDefinitionDto::toDomain)
-				table.update(columns)
-				tableRepository.persist(table)
+				// Step 2: Pass event to read model handler — projects version data
+				tableVersionCreatedReadModelEventHandler.handle(event)
 
 				call.respond(HttpStatusCode.Created)
 			}

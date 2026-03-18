@@ -1,28 +1,31 @@
 package io.structify.infrastructure.table.readmodel
 
-import io.structify.infrastructure.table.persistence.TablesTable
 import io.structify.infrastructure.table.readmodel.TableReadModelRepository.Table
+import io.structify.infrastructure.table.readmodel.persistence.TableReadModelTable
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.update
-import java.util.UUID
+import java.util.*
 
 class ExposedTableReadModelRepository : TableReadModelRepository {
 
 	override suspend fun findAllByUserId(userId: UUID): Set<Table> {
-		return TablesTable.selectAll()
-			.where { TablesTable.userId eq userId }
+		return TableReadModelTable.selectAll()
+			.where { TableReadModelTable.userId eq userId }
 			.mapTo(linkedSetOf()) { row ->
 				Table(
-					id = row[TablesTable.id].toString(),
-					name = row[TablesTable.name],
-					description = row[TablesTable.description]
+					id = row[TableReadModelTable.id].toString(),
+					name = row[TableReadModelTable.name],
+					description = row[TableReadModelTable.description]
 				)
 			}
 	}
 
-	override suspend fun addDescription(id: UUID, description: String) {
-		TablesTable.update({ TablesTable.id eq id }) {
-			it[TablesTable.description] = description
+	override suspend fun create(id: UUID, userId: UUID, name: String, description: String) {
+		TableReadModelTable.insert { row ->
+			row[TableReadModelTable.id] = id
+			row[TableReadModelTable.userId] = userId
+			row[TableReadModelTable.name] = name
+			row[TableReadModelTable.description] = description
 		}
 	}
 }

@@ -2,16 +2,19 @@ package io.structify.infrastructure
 
 import dagger.BindsInstance
 import dagger.Component
-import io.ktor.server.config.ApplicationConfig
+import io.ktor.server.config.*
 import io.structify.domain.db.TransactionalRunner
 import io.structify.domain.row.RowExtractor
 import io.structify.domain.row.RowRepository
+import io.structify.domain.table.TableCommandHandler
 import io.structify.domain.table.TableRepository
 import io.structify.infrastructure.db.dagger.DatabaseModule
 import io.structify.infrastructure.row.dagger.RowModule
 import io.structify.infrastructure.row.extractos.openai.ChatGptHttpClientModule
 import io.structify.infrastructure.row.readmodel.RowReadModelRepository
 import io.structify.infrastructure.table.dagger.TableRepositoryModule
+import io.structify.infrastructure.table.event.TableCreatedDomainEventHandler
+import io.structify.infrastructure.table.event.TableVersionCreatedReadModelEventHandler
 import io.structify.infrastructure.table.readmodel.TableReadModelRepository
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository
 import jakarta.inject.Singleton
@@ -31,8 +34,11 @@ interface StructifyAppComponent {
 	fun database(): Database
 	fun transactionalRunner(): TransactionalRunner
 	fun tableRepository(): TableRepository
+	fun tableCommandHandler(): TableCommandHandler
 	fun versionReadModelRepository(): VersionReadModelRepository
 	fun tableReadModelRepository(): TableReadModelRepository
+	fun tableCreatedDomainEventHandler(): TableCreatedDomainEventHandler
+	fun tableVersionCreatedReadModelEventHandler(): TableVersionCreatedReadModelEventHandler
 	fun rowRepository(): RowRepository
 	fun rowReadModelRepository(): RowReadModelRepository
 	fun rowExtractor(): RowExtractor
