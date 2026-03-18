@@ -11,7 +11,7 @@ post {
 }
 
 params:path {
-  tableId: 484d47a9-7b99-4ef0-94ad-09d23f89fc32
+  tableId: ee2355fb-907d-41cf-bd07-cac4f3405a07
 }
 
 body:json {
@@ -42,6 +42,12 @@ body:json {
       "name": "Title",
       "description": "What was transaction made for?",
       "type": "STRING"
+    },
+    {
+      "name": "Date",
+      "description": "Date of the transfer",
+      "type": "STRING",
+      "stringFormat": "DATE"
     }
   ]
   
@@ -93,7 +99,7 @@ example {
           "type": "STRING"
         }
       ]
-      
+          
     }
   }
   

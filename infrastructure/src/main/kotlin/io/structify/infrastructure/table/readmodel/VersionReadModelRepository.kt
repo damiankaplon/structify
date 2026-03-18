@@ -2,13 +2,15 @@ package io.structify.infrastructure.table.readmodel
 
 import io.structify.infrastructure.kotlinx.serialization.Uuid
 import kotlinx.serialization.Serializable
-import java.util.UUID
+import java.util.*
+import io.structify.domain.table.model.Version as DomainVersion
 
 interface VersionReadModelRepository {
 
 	suspend fun findAllVersionsByTableId(userId: UUID, tableId: UUID): Set<Version>
 	suspend fun findCurrentVersionByTableId(userId: UUID, tableId: UUID): Version?
 	suspend fun findCurrentVersionByTableIdOrThrow(userId: UUID, tableId: UUID): Version
+	suspend fun upsertVersion(tableId: UUID, userId: UUID, version: DomainVersion)
 
 	@Serializable
 	data class Version(

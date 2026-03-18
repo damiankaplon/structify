@@ -1,7 +1,7 @@
 package io.structify.infrastructure.table.readmodel
 
 import io.structify.infrastructure.table.readmodel.TableReadModelRepository.Table
-import java.util.UUID
+import java.util.*
 
 internal class TableReadModelInMemoryRepository : TableReadModelRepository {
 
@@ -15,7 +15,9 @@ internal class TableReadModelInMemoryRepository : TableReadModelRepository {
 		userTables.getOrPut(userId) { linkedSetOf() }.add(table)
 	}
 
-	override suspend fun addDescription(id: UUID, description: String) {
+	override suspend fun create(id: UUID, userId: UUID, name: String, description: String) {
+		userTables.getOrPut(userId) { linkedSetOf() }
+			.add(Table(id = id.toString(), name = name, description = description))
 	}
 
 	fun clear() {

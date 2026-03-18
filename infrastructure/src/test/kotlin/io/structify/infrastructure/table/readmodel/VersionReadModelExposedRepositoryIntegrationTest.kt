@@ -3,16 +3,15 @@ package io.structify.infrastructure.table.readmodel
 import io.structify.domain.table.model.Column
 import io.structify.domain.table.model.ColumnType
 import io.structify.domain.table.model.StringFormat
-import io.structify.domain.table.model.Table
-import io.structify.infrastructure.table.persistence.ExposedTableRepository
+import io.structify.domain.table.model.Version
 import io.structify.infrastructure.test.DatabaseIntegrationTest
 import org.assertj.core.api.Assertions.assertThat
-import java.util.UUID
+import java.util.*
 import kotlin.test.Test
 
 internal class VersionReadModelExposedRepositoryIntegrationTest : DatabaseIntegrationTest() {
 
-	private val tableRepo = ExposedTableRepository()
+	private val tableReadModelRepo = ExposedTableReadModelRepository()
 	private val versionReadModelRepo = VersionReadModelExposedRepository()
 
 	@Test
@@ -21,40 +20,46 @@ internal class VersionReadModelExposedRepositoryIntegrationTest : DatabaseIntegr
 		val userId = UUID.randomUUID()
 		val tableId = UUID.randomUUID()
 
-		val table = Table(
-			id = tableId,
-			userId = userId,
-			name = "People",
-		).apply {
-			update(
-				listOf(
-					Column.Definition(
+		// Set up read model: table entry required for join
+		tableReadModelRepo.create(tableId, userId, "People", "")
+
+		val version1 = Version(
+			columns = listOf(
+				Column(
+					definition = Column.Definition(
 						name = "name",
 						description = "Person name",
 						type = ColumnType.StringType(format = StringFormat.DATE),
 						optional = false
-					),
+					)
 				)
-			)
-			update(
-				listOf(
-					Column.Definition(
+			),
+			orderNumber = 1
+		)
+		val version2 = Version(
+			columns = listOf(
+				Column(
+					definition = Column.Definition(
 						name = "name",
 						description = "Person name",
 						type = ColumnType.StringType(format = StringFormat.DATE),
 						optional = false
-					),
-					Column.Definition(
+					)
+				),
+				Column(
+					definition = Column.Definition(
 						name = "age",
 						description = "Person age",
 						type = ColumnType.NumberType,
 						optional = true
-					),
+					)
 				)
-			)
-		}
+			),
+			orderNumber = 2
+		)
 
-		tableRepo.persist(table)
+		versionReadModelRepo.upsertVersion(tableId, userId, version1)
+		versionReadModelRepo.upsertVersion(tableId, userId, version2)
 
 		// when
 		val versions = versionReadModelRepo.findAllVersionsByTableId(userId, tableId)
@@ -81,40 +86,48 @@ internal class VersionReadModelExposedRepositoryIntegrationTest : DatabaseIntegr
 		val userId = UUID.randomUUID()
 		val tableId = UUID.randomUUID()
 
-		val table = Table(
-			id = tableId,
-			userId = userId,
-			name = "Products",
-		).apply {
-			update(
-				listOf(
-					Column.Definition(
-						name = "title",
-						description = "Product title",
-						type = ColumnType.StringType(format = StringFormat.DATE),
-						optional = false
-					),
-				)
-			)
-			update(
-				listOf(
-					Column.Definition(
-						name = "title",
-						description = "Product title",
-						type = ColumnType.StringType(format = StringFormat.DATE),
-						optional = false
-					),
-					Column.Definition(
-						name = "price",
-						description = "Product price",
-						type = ColumnType.NumberType,
-						optional = false
-					),
-				)
-			)
-		}
+		tableReadModelRepo.create(tableId, userId, "Products", "")
 
-		tableRepo.persist(table)
+		versionReadModelRepo.upsertVersion(
+			tableId, userId,
+			Version(
+				columns = listOf(
+					Column(
+						definition = Column.Definition(
+							name = "title",
+							description = "Product title",
+							type = ColumnType.StringType(format = StringFormat.DATE),
+							optional = false
+						)
+					)
+				),
+				orderNumber = 1
+			)
+		)
+		versionReadModelRepo.upsertVersion(
+			tableId, userId,
+			Version(
+				columns = listOf(
+					Column(
+						definition = Column.Definition(
+							name = "title",
+							description = "Product title",
+							type = ColumnType.StringType(format = StringFormat.DATE),
+							optional = false
+						)
+					),
+					Column(
+						definition = Column.Definition(
+							name = "price",
+							description = "Product price",
+							type = ColumnType.NumberType,
+							optional = false
+						)
+					)
+				),
+				orderNumber = 2
+			)
+		)
 
 		// when
 		val currentVersion = versionReadModelRepo.findCurrentVersionByTableId(userId, tableId)
@@ -132,30 +145,32 @@ internal class VersionReadModelExposedRepositoryIntegrationTest : DatabaseIntegr
 		val userId = UUID.randomUUID()
 		val tableId = UUID.randomUUID()
 
-		val table = Table(
-			id = tableId,
-			userId = userId,
-			name = "Users",
-		).apply {
-			update(
-				listOf(
-					Column.Definition(
-						name = "email",
-						description = "User email",
-						type = ColumnType.StringType(format = StringFormat.DATE),
-						optional = false
-					),
-					Column.Definition(
-						name = "active",
-						description = "Is active",
-						type = ColumnType.NumberType,
-						optional = false
-					),
-				)
-			)
-		}
+		tableReadModelRepo.create(tableId, userId, "Users", "")
 
-		tableRepo.persist(table)
+		versionReadModelRepo.upsertVersion(
+			tableId, userId,
+			Version(
+				columns = listOf(
+					Column(
+						definition = Column.Definition(
+							name = "email",
+							description = "User email",
+							type = ColumnType.StringType(format = StringFormat.DATE),
+							optional = false
+						)
+					),
+					Column(
+						definition = Column.Definition(
+							name = "active",
+							description = "Is active",
+							type = ColumnType.NumberType,
+							optional = false
+						)
+					)
+				),
+				orderNumber = 1
+			)
+		)
 
 		// when
 		val currentVersion = versionReadModelRepo.findCurrentVersionByTableIdOrThrow(userId, tableId)

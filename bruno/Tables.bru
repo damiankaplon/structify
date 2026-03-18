@@ -33,7 +33,7 @@ example {
   request: {
     url: {{base_url}}/tables
     method: GET
-    mode: none
+    mode: json
     body:json: {
       [
         {
@@ -65,6 +65,63 @@ example {
         [
           {
             "id": "484d47a9-7b99-4ef0-94ad-09d23f89fc32",
+            "name": "Payments",
+            "description": "Record of all personal payments"
+          }
+        ]
+      '''
+    }
+  }
+}
+
+example {
+  name: example
+  
+  request: {
+    url: {{base_url}}/tables
+    method: GET
+    mode: none
+    body:json: {
+      [
+        {
+        "name": "colummn one",
+        "description": "test desc",
+        "type": "STRING",
+        "stringFormat": "DATE", 
+        "optional": false
+      }
+      ]
+    }
+  }
+  
+  response: {
+    headers: {
+      content-length: 314
+      content-type: application/json
+      connection: keep-alive
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        [
+          {
+            "id": "484d47a9-7b99-4ef0-94ad-09d23f89fc32",
+            "name": "Payments",
+            "description": "Record of all personal payments"
+          },
+          {
+            "id": "5d51a349-a5c5-4332-a76e-fc44daf941b5",
+            "name": "Invoices",
+            "description": "Invoices"
+          },
+          {
+            "id": "ee2355fb-907d-41cf-bd07-cac4f3405a07",
             "name": "Payments",
             "description": "Record of all personal payments"
           }

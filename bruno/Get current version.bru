@@ -11,7 +11,7 @@ get {
 }
 
 params:path {
-  tableId: 484d47a9-7b99-4ef0-94ad-09d23f89fc32
+  tableId: ee2355fb-907d-41cf-bd07-cac4f3405a07
 }
 
 body:json {
@@ -37,7 +37,7 @@ example {
   request: {
     url: {{base_url}}/tables/:tableId/versions/current
     method: GET
-    mode: none
+    mode: json
     params:path: {
       tableId: 484d47a9-7b99-4ef0-94ad-09d23f89fc32
     }
@@ -125,6 +125,123 @@ example {
               "type": {
                 "type": "STRING",
                 "format": null
+              },
+              "optional": false,
+              "children": []
+            }
+          ],
+          "orderNumber": 1
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: example
+  
+  request: {
+    url: {{base_url}}/tables/:tableId/versions/current
+    method: GET
+    mode: none
+    params:path: {
+      tableId: ee2355fb-907d-41cf-bd07-cac4f3405a07
+    }
+  
+    body:json: {
+      [
+        {
+        "name": "colummn one",
+        "description": "test desc",
+        "type": "STRING",
+        "stringFormat": "DATE", 
+        "optional": false
+      }
+      ]
+    }
+  }
+  
+  response: {
+    headers: {
+      content-length: 1202
+      content-type: application/json
+      connection: keep-alive
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "id": "455beacd-a9d0-4cd3-adea-588271f7872e",
+          "columns": [
+            {
+              "id": "d3e8648b-70cb-4f38-ae9a-524893afa5d4",
+              "name": "Money",
+              "description": "Amount and currency of the transfer",
+              "type": {
+                "type": "OBJECT",
+                "format": null
+              },
+              "optional": false,
+              "children": [
+                {
+                  "id": "68ecce6a-b6b6-44c8-ad0a-c5d470deb6cd",
+                  "name": "Amount",
+                  "description": "Amount of the payment or transfer. Must be always positive",
+                  "type": {
+                    "type": "NUMBER",
+                    "format": null
+                  },
+                  "optional": false,
+                  "children": []
+                },
+                {
+                  "id": "121e03b6-092b-4632-8be4-42f2a1fee802",
+                  "name": "Currency",
+                  "description": "Currency of the transfer e.g.: USD, EUR, PLN etc.",
+                  "type": {
+                    "type": "STRING",
+                    "format": null
+                  },
+                  "optional": false,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "915686eb-5851-47fb-b4a5-299d0a1969b0",
+              "name": "Receiver",
+              "description": "Eventual money receiver of the transaction",
+              "type": {
+                "type": "STRING",
+                "format": null
+              },
+              "optional": false,
+              "children": []
+            },
+            {
+              "id": "63b0f93e-b4dc-49da-b91b-fded68d542ea",
+              "name": "Title",
+              "description": "What was transaction made for?",
+              "type": {
+                "type": "STRING",
+                "format": null
+              },
+              "optional": false,
+              "children": []
+            },
+            {
+              "id": "674ed30c-e020-4a58-8dd6-5fdade5a723a",
+              "name": "Date",
+              "description": "Date of the transfer",
+              "type": {
+                "type": "STRING",
+                "format": "DATE"
               },
               "optional": false,
               "children": []

@@ -1,12 +1,12 @@
 package io.structify.infrastructure.table.readmodel
 
 import kotlinx.serialization.Serializable
-import java.util.UUID
+import java.util.*
 
 interface TableReadModelRepository {
 
 	suspend fun findAllByUserId(userId: UUID): Set<Table>
-	suspend fun addDescription(id: UUID, description: String)
+	suspend fun create(id: UUID, userId: UUID, name: String, description: String)
 
 	@Serializable
 	data class Table(
