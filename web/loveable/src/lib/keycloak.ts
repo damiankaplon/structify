@@ -7,7 +7,7 @@ const keycloakUrl = import.meta.env.MODE === 'development'
 const keycloak = new Keycloak({
     url: keycloakUrl,
     realm: "structify",
-    clientId: "structify_ui_web"
+    clientId: "structify_ui_web",
 });
 
 export default keycloak;
