@@ -9,27 +9,12 @@ import {
     ListboxOptions
 } from '@headlessui/react';
 import {useAuth} from '@/lib/auth';
-import {createVersion, type TableVersion, type ColumnInput} from '@/lib/api';
+import {createVersion, type TableVersion, type ColumnInput, type ColumnDefinition} from '@/lib/api';
 import {toast} from 'sonner';
+import ColumnFieldEditor, {emptyColumn, type ColumnFormData} from '@/components/ColumnFieldEditor';
 
 const TYPES = ['STRING', 'NUMBER', 'OBJECT'] as const;
 const STRING_FORMATS = [null, 'DATE'] as const;
-
-interface ColumnFormData {
-    name: string;
-    description: string;
-    type: 'STRING' | 'NUMBER' | 'OBJECT';
-    stringFormat: string | null;
-    children: ColumnFormData[];
-}
-
-const emptyColumn = (): ColumnFormData => ({
-    name: '',
-    description: '',
-    type: 'STRING',
-    stringFormat: null,
-    children: [],
-});
 
 interface Props {
     tableId: string;
@@ -40,20 +25,16 @@ interface Props {
 const ColumnEditor = ({tableId, version, onSaved}: Props) => {
     const {getToken} = useAuth();
 
+    const mapColumn = (c: ColumnDefinition): ColumnFormData => ({
+        name: c.name,
+        description: c.description,
+        type: c.type.type,
+        stringFormat: c.type.format,
+        children: c.children.map(mapColumn),
+    });
+
     const initialColumns: ColumnFormData[] = version
-        ? version.columns.map((c) => ({
-            name: c.name,
-            description: c.description,
-            type: c.type.type,
-            stringFormat: c.type.format,
-            children: c.children.map((ch) => ({
-                name: ch.name,
-                description: ch.description,
-                type: ch.type.type,
-                stringFormat: ch.type.format,
-                children: [],
-            })),
-        }))
+        ? version.columns.map(mapColumn)
         : [];
 
     const [columns, setColumns] = useState<ColumnFormData[]>(initialColumns);
@@ -63,7 +44,7 @@ const ColumnEditor = ({tableId, version, onSaved}: Props) => {
     const [editingChild, setEditingChild] = useState<number | null>(null);
 
     const openAdd = () => {
-        setEditIdx(null);
+        setEditIdx(-1);
         setEditCol(emptyColumn());
     };
 
@@ -72,7 +53,7 @@ const ColumnEditor = ({tableId, version, onSaved}: Props) => {
         setEditCol({...columns[idx], children: [...columns[idx].children]});
     };
 
-    const closeEditor = () => setEditIdx(undefined as any);
+    const closeEditor = () => setEditIdx(null);
 
     const saveColumn = () => {
         if (!editCol.name.trim()) return;
@@ -83,7 +64,7 @@ const ColumnEditor = ({tableId, version, onSaved}: Props) => {
             updated.push(editCol);
         }
         setColumns(updated);
-        setEditIdx(undefined as any);
+        setEditIdx(null);
     };
 
     const removeColumn = (idx: number) => setColumns(columns.filter((_, i) => i !== idx));
@@ -95,9 +76,9 @@ const ColumnEditor = ({tableId, version, onSaved}: Props) => {
         });
     };
 
-    const updateChild = (idx: number, partial: Partial<ColumnFormData>) => {
+    const updateChild = (idx: number, updated: ColumnFormData | Partial<ColumnFormData>) => {
         const children = [...editCol.children];
-        children[idx] = {...children[idx], ...partial};
+        children[idx] = {...children[idx], ...updated};
         setEditCol({...editCol, children});
     };
 
@@ -135,7 +116,7 @@ const ColumnEditor = ({tableId, version, onSaved}: Props) => {
         }
     };
 
-    const isEditorOpen = editIdx !== null && editIdx !== (undefined as any);
+    const isEditorOpen = editIdx !== null;
 
     return (
         <div>
@@ -342,58 +323,14 @@ const ColumnEditor = ({tableId, version, onSaved}: Props) => {
                                     ) : (
                                         <div className="space-y-3">
                                             {editCol.children.map((ch, ci) => (
-                                                <div key={ci} className="rounded-lg border border-border bg-card p-3">
-                                                    <div className="mb-2 flex items-center justify-between">
-                                                        <span
-                                                            className="text-xs font-medium text-muted-foreground">Field {ci + 1}</span>
-                                                        <button
-                                                            onClick={() => removeChild(ci)}
-                                                            className="text-xs text-destructive hover:underline"
-                                                        >
-                                                            Remove
-                                                        </button>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <input
-                                                            value={ch.name}
-                                                            onChange={(e) => updateChild(ci, {name: e.target.value})}
-                                                            placeholder="Field name"
-                                                            className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                                        />
-                                                        <textarea
-                                                            value={ch.description}
-                                                            onChange={(e) => updateChild(ci, {description: e.target.value})}
-                                                            rows={2}
-                                                            placeholder="Describe this field for AI extraction…"
-                                                            className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                                                        />
-                                                        <Listbox value={ch.type}
-                                                                 onChange={(v) => updateChild(ci, {type: v as any})}>
-                                                            <div className="relative">
-                                                                <ListboxButton
-                                                                    className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-left text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-                                                                    {ch.type}
-                                                                </ListboxButton>
-                                                                <ListboxOptions
-                                                                    className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-card py-1 shadow-lg focus:outline-none">
-                                                                    {['STRING', 'NUMBER'].map((t) => (
-                                                                        <ListboxOption
-                                                                            key={t}
-                                                                            value={t}
-                                                                            className={({active}) =>
-                                                                                `cursor-pointer px-3 py-2 text-sm ${
-                                                                                    active ? 'bg-primary/10 text-primary' : 'text-foreground'
-                                                                                }`
-                                                                            }
-                                                                        >
-                                                                            {t}
-                                                                        </ListboxOption>
-                                                                    ))}
-                                                                </ListboxOptions>
-                                                            </div>
-                                                        </Listbox>
-                                                    </div>
-                                                </div>
+                                                <ColumnFieldEditor
+                                                    key={ci}
+                                                    field={ch}
+                                                    onChange={(updated) => updateChild(ci, updated)}
+                                                    onRemove={() => removeChild(ci)}
+                                                    depth={1}
+                                                    label={`Field ${ci + 1}`}
+                                                />
                                             ))}
                                         </div>
                                     )}
