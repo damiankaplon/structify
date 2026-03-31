@@ -1,206 +1,169 @@
-import React, {useState} from 'react';
-import {Link, useParams} from 'react-router-dom';
-import {useQuery} from '@tanstack/react-query';
-import MainLayout from '@/components/layout/MainLayout';
-import EditColumnsDialog from '@/components/tables/EditColumnsDialog';
-import CreateRowDialog from '@/components/tables/CreateRowDialog';
-import PdfUpload from '@/components/tables/PdfUpload';
-import DataTable from '@/components/tables/DataTable';
-import {Button} from '@/components/ui/button';
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
-import {Badge} from '@/components/ui/badge';
-import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
-import {useApi} from '@/hooks/useApi';
-import {Column, Row, tablesApi, TableVersion} from '@/lib/api';
-import {AlertCircle, ArrowLeft, Columns3, FileSpreadsheet, Loader2, Settings} from 'lucide-react';
-import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
+import {useEffect, useState, useCallback} from 'react';
+import {useParams, Link} from 'react-router-dom';
+import {Tab, TabGroup, TabList, TabPanel, TabPanels} from '@headlessui/react';
+import {useAuth} from '@/lib/auth';
+import {
+  getCurrentVersion,
+  getRows,
+  generateRowFromPdf,
+  type TableVersion,
+  type Row,
+  type ColumnDefinition,
+} from '@/lib/api';
+import {toast} from 'sonner';
+import ColumnEditor from '@/components/ColumnEditor';
+import PdfUpload from '@/components/PdfUpload';
 
-const ColumnTree: React.FC<{ columns: Column[]; depth: number }> = ({columns, depth}) => (
-    <div className="space-y-3">
-        {columns.map((column, index) => (
-            <div
-                key={column.id}
-                className="flex flex-col gap-2 p-4 rounded-lg border bg-card"
-                style={{marginLeft: `${depth * 1.5}rem`}}
-            >
-                <div className="flex items-start gap-4">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-medium">
-                        {index + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="font-medium text-foreground">{column.name}</h4>
-                            <Badge variant="secondary">{column.type.type}</Badge>
-                            {column.optional && <Badge variant="outline">Optional</Badge>}
-                        </div>
-                        <p className="mt-1 text-sm text-muted-foreground">{column.description}</p>
-                    </div>
-                </div>
-                {column.type.type === 'OBJECT' && column.children?.length > 0 && (
-                    <ColumnTree columns={column.children} depth={0}/>
-                )}
-            </div>
-        ))}
-    </div>
-);
+const TableDetailPage = () => {
+  const {tableId} = useParams<{ tableId: string }>();
+  const {getToken} = useAuth();
+  const [version, setVersion] = useState<TableVersion | null>(null);
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
 
-const TableDetailPage: React.FC = () => {
-    const {tableId} = useParams<{ tableId: string }>();
-    const api = useApi();
-    const [isEditColumnsOpen, setIsEditColumnsOpen] = useState(false);
-
-    const {
-        data: version,
-        isLoading: isVersionLoading,
-        refetch: refetchVersion,
-    } = useQuery<TableVersion | null>({
-        queryKey: ['tableVersion', tableId],
-        queryFn: () => tablesApi.getCurrentVersion(api, tableId!),
-        enabled: !!tableId,
-    });
-
-    const {
-        data: rows,
-        isLoading: isRowsLoading,
-        refetch: refetchRows,
-    } = useQuery<Row[]>({
-        queryKey: ['tableRows', tableId],
-        queryFn: () => tablesApi.getRows(api, tableId!),
-        enabled: !!tableId && !!version,
-    });
-
-    const handleVersionCreated = () => {
-        refetchVersion();
-        refetchRows();
-    };
-
-    const handleRowsChanged = () => {
-        refetchRows();
-    };
-
-    if (isVersionLoading) {
-        return (
-            <MainLayout>
-                <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary"/>
-                </div>
-            </MainLayout>
-        );
+  const load = useCallback(async () => {
+    if (!tableId) return;
+    try {
+      setLoading(true);
+      const [v, r] = await Promise.all([
+        getCurrentVersion(getToken(), tableId).catch(() => null),
+        getRows(getToken(), tableId).catch(() => []),
+      ]);
+      setVersion(v);
+      setRows(r);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
     }
+  }, [tableId, getToken]);
 
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const flatColumns = (cols: ColumnDefinition[]): ColumnDefinition[] =>
+    cols.flatMap((c) => (c.children.length > 0 ? c.children : [c]));
+
+  const handlePdfUpload = async (file: File) => {
+    if (!tableId || !version) return;
+    try {
+      await generateRowFromPdf(getToken(), tableId, version.orderNumber, file);
+      toast.success('Row generated from PDF');
+      load();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  if (loading) {
     return (
-        <MainLayout>
-            <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                    <Link to="/">
-                        <Button variant="ghost" size="icon">
-                            <ArrowLeft className="h-4 w-4"/>
-                        </Button>
-                    </Link>
-                    <div className="flex-1">
-                        <h1 className="text-2xl font-bold text-foreground">Table Details</h1>
-                        <p className="text-muted-foreground">
-                            {version ? `Version ${version.orderNumber}` : 'No structure defined yet'}
-                        </p>
-                    </div>
-                    <Button onClick={() => setIsEditColumnsOpen(true)}>
-                        <Settings className="mr-2 h-4 w-4"/>
-                        {version ? 'Edit Structure' : 'Define Structure'}
-                    </Button>
-                </div>
-
-                {!version ? (
-                    <Alert>
-                        <AlertCircle className="h-4 w-4"/>
-                        <AlertTitle>No Table Structure</AlertTitle>
-                        <AlertDescription>
-                            This table doesn't have a structure defined yet. Click "Define Structure" to add
-                            columns that describe the data you want to extract from PDFs.
-                        </AlertDescription>
-                    </Alert>
-                ) : (
-                    <Tabs defaultValue="data" className="space-y-6">
-                        <TabsList>
-                            <TabsTrigger value="data">
-                                <FileSpreadsheet className="mr-2 h-4 w-4"/>
-                                Data
-                            </TabsTrigger>
-                            <TabsTrigger value="structure">
-                                <Columns3 className="mr-2 h-4 w-4"/>
-                                Structure
-                            </TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="data" className="space-y-6">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Extract Data from PDF</CardTitle>
-                                    <CardDescription>
-                                        Upload a PDF document to automatically extract data based on your table
-                                        structure.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <PdfUpload
-                                        tableId={tableId!}
-                                        versionNumber={version.orderNumber}
-                                        onRowGenerated={handleRowsChanged}
-                                    />
-                                </CardContent>
-                            </Card>
-
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                                    <div>
-                                        <CardTitle>Table Data</CardTitle>
-                                        <CardDescription>
-                                            {rows?.length || 0} row{(rows?.length || 0) !== 1 ? 's' : ''} extracted
-                                        </CardDescription>
-                                    </div>
-                                    <CreateRowDialog
-                                        tableId={tableId!}
-                                        columns={version.columns}
-                                        onRowCreated={handleRowsChanged}
-                                    />
-                                </CardHeader>
-                                <CardContent>
-                                    {isRowsLoading ? (
-                                        <div className="flex items-center justify-center py-8">
-                                            <Loader2 className="h-6 w-6 animate-spin text-primary"/>
-                                        </div>
-                                    ) : (
-                                        <DataTable columns={version.columns} rows={rows || []}/>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        <TabsContent value="structure" className="space-y-4">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Column Definitions</CardTitle>
-                                    <CardDescription>
-                                        These columns define what data will be extracted from your PDF documents.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <ColumnTree columns={version.columns} depth={0}/>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                    </Tabs>
-                )}
-
-                <EditColumnsDialog
-                    open={isEditColumnsOpen}
-                    onOpenChange={setIsEditColumnsOpen}
-                    tableId={tableId!}
-                    existingColumns={version?.columns}
-                    onVersionCreated={handleVersionCreated}
-                />
-            </div>
-        </MainLayout>
+      <div className="space-y-4">
+        <div className="h-8 w-48 animate-pulse rounded-lg bg-muted"/>
+        <div className="h-64 animate-pulse rounded-xl bg-muted"/>
+      </div>
     );
+  }
+
+  const flat = version ? flatColumns(version.columns) : [];
+
+  return (
+    <div>
+      <div className="mb-6 flex items-center gap-3">
+        <Link
+          to="/"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
+          </svg>
+        </Link>
+        <h1 className="text-2xl font-bold text-foreground">Table Detail</h1>
+      </div>
+
+      <TabGroup>
+        <TabList className="mb-6 flex gap-1 rounded-xl bg-muted p-1">
+          {['Schema', 'Data', 'Upload PDF'].map((label) => (
+            <Tab
+              key={label}
+              className={({selected}) =>
+                `flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all focus:outline-none ${
+                  selected
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`
+              }
+            >
+              {label}
+            </Tab>
+          ))}
+        </TabList>
+
+        <TabPanels>
+          {/* Schema Tab */}
+          <TabPanel>
+            <ColumnEditor tableId={tableId!} version={version} onSaved={load}/>
+          </TabPanel>
+
+          {/* Data Tab */}
+          <TabPanel>
+            {rows.length === 0 ? (
+              <div className="flex flex-col items-center rounded-2xl border-2 border-dashed border-border py-16">
+                <p className="text-sm font-medium text-foreground">No rows yet</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Upload a PDF to extract data into this table
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-border">
+                <table className="w-full text-sm">
+                  <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    {flat.map((col) => (
+                      <th
+                        key={col.id}
+                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                      >
+                        {col.name}
+                      </th>
+                    ))}
+                  </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                  {rows.map((row) => (
+                    <tr key={row.id} className="transition-colors hover:bg-muted/30">
+                      {flat.map((col) => {
+                        const cell = row.cells.find((c) => c.columnDefinitionId === col.id);
+                        return (
+                          <td key={col.id} className="px-4 py-3 text-foreground">
+                            {cell?.value || '—'}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </TabPanel>
+
+          {/* Upload PDF Tab */}
+          <TabPanel>
+            {!version ? (
+              <div className="rounded-xl border border-border bg-card p-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Define your table schema first before uploading documents.
+                </p>
+              </div>
+            ) : (
+              <PdfUpload onUpload={handlePdfUpload}/>
+            )}
+          </TabPanel>
+        </TabPanels>
+      </TabGroup>
+    </div>
+  );
 };
 
 export default TableDetailPage;

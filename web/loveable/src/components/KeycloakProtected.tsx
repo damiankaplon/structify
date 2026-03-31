@@ -1,38 +1,23 @@
 import React from 'react';
 import {useKeycloak} from '@react-keycloak/web';
-import {AuthProvider} from '@/contexts/AuthContext';
-import {Loader2} from 'lucide-react';
+import {AuthProvider} from '@/lib/auth';
+import LoadingScreen from './LoadingScreen';
 
-interface KeycloakProtectedProps {
-    children: React.ReactNode;
-}
+const KeycloakProtected: React.FC<{ children: React.ReactNode }> = ({children}) => {
+  const {keycloak, initialized} = useKeycloak();
 
-const LoadingScreen: React.FC = () => (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary"/>
-            <p className="text-muted-foreground">Loading Structify...</p>
-        </div>
-    </div>
-);
+  if (!initialized) return <LoadingScreen/>;
 
-const KeycloakProtected: React.FC<KeycloakProtectedProps> = ({children}) => {
-    const {keycloak, initialized} = useKeycloak();
+  if (!keycloak.authenticated) {
+    keycloak.login();
+    return <LoadingScreen/>;
+  }
 
-    if (!initialized) {
-        return <LoadingScreen/>;
-    }
-
-    if (!keycloak.authenticated) {
-        keycloak.login();
-        return <LoadingScreen/>;
-    }
-
-    return (
-        <AuthProvider jwtProvider={() => keycloak.token!}>
-            {children}
-        </AuthProvider>
-    );
+  return (
+    <AuthProvider jwtProvider={() => keycloak.token!}>
+      {children}
+    </AuthProvider>
+  );
 };
 
 export default KeycloakProtected;
