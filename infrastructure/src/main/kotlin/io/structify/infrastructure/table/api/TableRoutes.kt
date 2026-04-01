@@ -6,10 +6,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.reflect.*
 import io.structify.domain.db.TransactionalRunner
-import io.structify.domain.table.CreateTableVersionCommand
-import io.structify.domain.table.TableCommandHandler
-import io.structify.domain.table.TableCreated
-import io.structify.domain.table.TableVersionCreated
+import io.structify.domain.table.*
 import io.structify.domain.table.model.Column
 import io.structify.domain.table.model.ColumnType
 import io.structify.domain.table.model.StringFormat
@@ -80,6 +77,26 @@ fun Route.tableRoutes(
 				)
 
 				// Step 2: Pass event to read model handler — projects version data
+				tableVersionCreatedReadModelEventHandler.handle(event)
+
+				call.respond(HttpStatusCode.Created)
+			}
+		}
+
+		post("/{tableId}/versions/{versionOrderNumber}/restore") {
+			transactionalRunner.transaction {
+				val principal = call.jwtPrincipalOrThrow()
+				val tableId = UUID.fromString(call.parameters["tableId"])
+				val versionOrderNumber = call.parameters["versionOrderNumber"]!!.toInt()
+
+				val event: TableVersionCreated = tableCommandHandler.handle(
+					RestoreTableVersionCommand(
+						userId = principal.userId,
+						tableId = tableId,
+						versionOrderNumber = versionOrderNumber,
+					)
+				)
+
 				tableVersionCreatedReadModelEventHandler.handle(event)
 
 				call.respond(HttpStatusCode.Created)

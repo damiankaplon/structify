@@ -76,6 +76,9 @@ fun Application.installApp(
 		exception<NoSuchElementException> { call, cause ->
 			call.respondText(cause.message ?: "Resource not found", status = HttpStatusCode.NotFound)
 		}
+		exception<IllegalArgumentException> { call, cause ->
+			call.respondText(cause.message ?: "Bad request", status = HttpStatusCode.BadRequest)
+		}
 		exception(NoEntityFoundExceptionHandler)
 	}
 	installRouting(

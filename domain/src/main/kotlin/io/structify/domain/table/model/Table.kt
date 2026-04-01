@@ -1,6 +1,6 @@
 package io.structify.domain.table.model
 
-import java.util.UUID
+import java.util.*
 
 class Table(
 	val id: UUID = UUID.randomUUID(),
@@ -39,6 +39,13 @@ class Table(
 			definition = this,
 			children = children
 		)
+	}
+
+	fun restoreVersion(orderNumber: Int) {
+		val version = versions.firstOrNull { it.orderNumber == orderNumber }
+			?: throw IllegalArgumentException("Version with orderNumber $orderNumber not found")
+		val definitions = version.columns.map { it.definition }
+		update(definitions)
 	}
 
 	fun getCurrentVersion(): Version = versions.maxBy { it.orderNumber }

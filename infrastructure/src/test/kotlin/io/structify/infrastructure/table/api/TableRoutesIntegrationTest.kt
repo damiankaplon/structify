@@ -1,13 +1,9 @@
 package io.structify.infrastructure.table.api
 
-import io.ktor.client.call.body
-import io.ktor.client.request.get
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.contentType
-import io.ktor.server.testing.testApplication
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import io.ktor.server.testing.*
 import io.structify.infrastructure.kotlinx.serialization.toKotlinx
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository.ColumnDefinition
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository.ColumnType
@@ -15,7 +11,7 @@ import io.structify.infrastructure.table.readmodel.VersionReadModelRepository.Ve
 import io.structify.infrastructure.test.clientJson
 import io.structify.infrastructure.test.setupTestApp
 import org.assertj.core.api.Assertions.assertThat
-import java.util.UUID
+import java.util.*
 import kotlin.test.Test
 import io.structify.infrastructure.table.readmodel.TableReadModelRepository.Table as TableReadModelTable
 import io.structify.infrastructure.table.readmodel.VersionReadModelRepository.Version as VersionReadModel
@@ -217,6 +213,137 @@ internal class TableRoutesIntegrationTest {
 	}
 
 	@Test
+	fun `should restore a table version via API`() = testApplication {
+		// given
+		val testApp = setupTestApp()
+		val loggedInUserUuid = UUID.randomUUID()
+		testApp.mockJwtAuthenticationProvider().setTestJwtPrincipalSubject(loggedInUserUuid.toString())
+
+		val tableId = UUID.randomUUID()
+		val table = io.structify.domain.table.model.Table(id = tableId, userId = loggedInUserUuid, name = "Test table")
+		testApp.tableRepository().persist(table)
+
+		// Create version 1 with "name" column
+		clientJson.post("/api/tables/$tableId/versions") {
+			contentType(ContentType.Application.Json)
+			setBody(
+				listOf(
+					ColumnDefinitionDto(
+						name = "name",
+						description = "Person name",
+						type = "STRING",
+						optional = false
+					)
+				)
+			)
+		}
+
+		// Create version 2 with "email" column
+		clientJson.post("/api/tables/$tableId/versions") {
+			contentType(ContentType.Application.Json)
+			setBody(
+				listOf(
+					ColumnDefinitionDto(
+						name = "email",
+						description = "Person email",
+						type = "STRING",
+						optional = false
+					)
+				)
+			)
+		}
+
+		// when — restore version 1
+		val response = clientJson.post("/api/tables/$tableId/versions/1/restore")
+
+		// then
+		assertThat(response.status).isEqualTo(HttpStatusCode.Created)
+
+		// domain aggregate has 3 versions now
+		val updatedTable = testApp.tableRepository().findAll().first()
+		assertThat(updatedTable.versions).hasSize(3)
+		val restoredVersion = updatedTable.getCurrentVersion()
+		assertThat(restoredVersion.orderNumber).isEqualTo(3)
+		assertThat(restoredVersion.columns.map { it.definition.name }).containsExactly("name")
+
+		// read model has the new version projected
+		val readModelVersions = testApp.versionReadModelRepository().findAllVersionsByTableId(loggedInUserUuid, tableId)
+		assertThat(readModelVersions).hasSize(3)
+		val readModelRestored = readModelVersions.maxBy { it.orderNumber }
+		assertThat(readModelRestored.orderNumber).isEqualTo(3)
+		assertThat(readModelRestored.columns.map { it.name }).containsExactly("name")
+	}
+
+	@Test
+	fun `should return error when restoring non-existent version`() = testApplication {
+		// given
+		val testApp = setupTestApp()
+		val loggedInUserUuid = UUID.randomUUID()
+		testApp.mockJwtAuthenticationProvider().setTestJwtPrincipalSubject(loggedInUserUuid.toString())
+
+		val tableId = UUID.randomUUID()
+		val table = io.structify.domain.table.model.Table(id = tableId, userId = loggedInUserUuid, name = "Test table")
+		testApp.tableRepository().persist(table)
+
+		clientJson.post("/api/tables/$tableId/versions") {
+			contentType(ContentType.Application.Json)
+			setBody(
+				listOf(
+					ColumnDefinitionDto(
+						name = "name",
+						description = "Person name",
+						type = "STRING",
+						optional = false
+					)
+				)
+			)
+		}
+
+		// when — restore version order number that doesn't exist
+		val response = clientJson.post("/api/tables/$tableId/versions/999/restore")
+
+		// then
+		assertThat(response.status.value).isGreaterThanOrEqualTo(400)
+	}
+
+	@Test
+	fun `should not allow restoring version of another user's table`() = testApplication {
+		// given
+		val testApp = setupTestApp()
+		val userAUuid = UUID.randomUUID()
+		val userBUuid = UUID.randomUUID()
+
+		// table belongs to user A
+		val tableId = UUID.randomUUID()
+		val table = io.structify.domain.table.model.Table(id = tableId, userId = userAUuid, name = "User A table")
+		testApp.tableRepository().persist(table)
+		// set auth as user A to create a version
+		testApp.mockJwtAuthenticationProvider().setTestJwtPrincipalSubject(userAUuid.toString())
+		clientJson.post("/api/tables/$tableId/versions") {
+			contentType(ContentType.Application.Json)
+			setBody(
+				listOf(
+					ColumnDefinitionDto(
+						name = "name",
+						description = "Person name",
+						type = "STRING",
+						optional = false
+					)
+				)
+			)
+		}
+
+		// authenticate as user B
+		testApp.mockJwtAuthenticationProvider().setTestJwtPrincipalSubject(userBUuid.toString())
+
+		// when — user B tries to restore user A's table version
+		val response = clientJson.post("/api/tables/$tableId/versions/1/restore")
+
+		// then — multitenancy enforcement returns 404
+		assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)
+	}
+
+	@Test
 	fun `should not return tables belonging to other users`() = testApplication {
 		// given
 		val testApp = setupTestApp()
@@ -237,7 +364,11 @@ internal class TableRoutesIntegrationTest {
 		// and one table for a different user
 		testApp.tableReadModelRepository().addTable(
 			otherUserUuid,
-			TableReadModelTable(id = UUID.randomUUID().toString(), name = "ShouldNotBeVisible", description = "Should not be visible")
+			TableReadModelTable(
+				id = UUID.randomUUID().toString(),
+				name = "ShouldNotBeVisible",
+				description = "Should not be visible"
+			)
 		)
 
 		// when
