@@ -1,0 +1,54 @@
+meta {
+  name: Restore version
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{base_url}}/tables/:tableId/versions/:versionOrderNumber/restore
+  body: none
+  auth: inherit
+}
+
+params:path {
+  tableId: ee2355fb-907d-41cf-bd07-cac4f3405a07
+  versionOrderNumber: 1
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+example {
+  name: example
+
+  request: {
+    url: {{base_url}}/tables/:tableId/versions/:versionOrderNumber/restore
+    method: POST
+    mode: none
+    params:path: {
+      tableId: ee2355fb-907d-41cf-bd07-cac4f3405a07
+      versionOrderNumber: 1
+    }
+  }
+
+  response: {
+    headers: {
+      content-length: 0
+      connection: keep-alive
+    }
+
+    status: {
+      code: 201
+      text: Created
+    }
+
+    body: {
+      type: text
+      content: '''
+
+      '''
+    }
+  }
+}
