@@ -9,6 +9,12 @@ data class CreateTableVersionCommand(
 	val columns: List<Column.Definition>,
 )
 
+data class RestoreTableVersionCommand(
+	val userId: UUID,
+	val tableId: UUID,
+	val versionOrderNumber: Int,
+)
+
 class TableCommandHandler(
 	private val tableRepository: TableRepository,
 ) {
@@ -25,6 +31,17 @@ class TableCommandHandler(
 	suspend fun handle(command: CreateTableVersionCommand): TableVersionCreated {
 		val table = tableRepository.findByIdThrow(command.userId, command.tableId)
 		table.update(command.columns)
+		tableRepository.persist(table)
+		return TableVersionCreated(
+			tableId = table.id,
+			userId = table.userId,
+			version = table.getCurrentVersion(),
+		)
+	}
+
+	suspend fun handle(command: RestoreTableVersionCommand): TableVersionCreated {
+		val table = tableRepository.findByIdThrow(command.userId, command.tableId)
+		table.restoreVersion(command.versionOrderNumber)
 		tableRepository.persist(table)
 		return TableVersionCreated(
 			tableId = table.id,

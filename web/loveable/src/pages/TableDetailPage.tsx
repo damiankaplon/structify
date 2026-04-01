@@ -1,18 +1,19 @@
-import {useEffect, useState, useCallback} from 'react';
-import {useParams, Link} from 'react-router-dom';
+import {useCallback, useEffect, useState} from 'react';
+import {Link, useParams} from 'react-router-dom';
 import {Tab, TabGroup, TabList, TabPanel, TabPanels} from '@headlessui/react';
 import {useAuth} from '@/lib/auth';
 import {
+  type ColumnDefinition,
+  generateRowFromPdf,
   getCurrentVersion,
   getRows,
-  generateRowFromPdf,
-  type TableVersion,
   type Row,
-  type ColumnDefinition,
+  type TableVersion,
 } from '@/lib/api';
 import {toast} from 'sonner';
 import ColumnEditor from '@/components/ColumnEditor';
 import PdfUpload from '@/components/PdfUpload';
+import VersionHistory from '@/components/VersionHistory';
 
 const TableDetailPage = () => {
   const {tableId} = useParams<{ tableId: string }>();
@@ -83,7 +84,7 @@ const TableDetailPage = () => {
 
       <TabGroup>
         <TabList className="mb-6 flex gap-1 rounded-xl bg-muted p-1">
-          {['Schema', 'Data', 'Upload PDF'].map((label) => (
+          {['Schema', 'Data', 'Upload PDF', 'Version History'].map((label) => (
             <Tab
               key={label}
               className={({selected}) =>
@@ -159,6 +160,15 @@ const TableDetailPage = () => {
             ) : (
               <PdfUpload onUpload={handlePdfUpload}/>
             )}
+          </TabPanel>
+
+          {/* Version History Tab */}
+          <TabPanel>
+            <VersionHistory
+              tableId={tableId!}
+              currentVersionId={version?.id ?? null}
+              onRestored={load}
+            />
           </TabPanel>
         </TabPanels>
       </TabGroup>

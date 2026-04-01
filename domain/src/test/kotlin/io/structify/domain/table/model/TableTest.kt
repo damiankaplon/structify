@@ -1,7 +1,7 @@
 package io.structify.domain.table.model
 
 import org.assertj.core.api.Assertions.assertThat
-import java.util.UUID
+import java.util.*
 import kotlin.test.Test
 
 internal class TableTest {
@@ -160,6 +160,105 @@ internal class TableTest {
 		// then - columns should be reused (same IDs)
 		assertThat(firstParent.id).isEqualTo(secondParent.id)
 		assertThat(firstChild.id).isEqualTo(secondChild.id)
+	}
+
+	@Test
+	fun `should create new version with same columns when restoring a previous version`() {
+		// given
+		val userId = UUID.randomUUID()
+		val table = Table(userId = userId, name = "People")
+		val version1Definitions = listOf(
+			Column.Definition(
+				name = "name",
+				description = "Person name",
+				type = ColumnType.StringType(),
+				optional = false
+			)
+		)
+		val version2Definitions = listOf(
+			Column.Definition(
+				name = "email",
+				description = "Person email",
+				type = ColumnType.StringType(),
+				optional = false
+			)
+		)
+		table.update(version1Definitions)
+		table.update(version2Definitions)
+
+		// when
+		table.restoreVersion(1)
+
+		// then
+		val currentVersion = table.getCurrentVersion()
+		assertThat(currentVersion.orderNumber).isEqualTo(3)
+		assertThat(currentVersion.columns.map { it.definition }).containsExactlyInAnyOrderElementsOf(version1Definitions)
+	}
+
+	@Test
+	fun `should reuse column instances when restoring a version`() {
+		// given
+		val userId = UUID.randomUUID()
+		val table = Table(userId = userId, name = "People")
+		val sharedDefinition = Column.Definition(
+			name = "name",
+			description = "Person name",
+			type = ColumnType.StringType(),
+			optional = false
+		)
+		table.update(listOf(sharedDefinition))
+		val version1 = table.getCurrentVersion()
+		table.update(
+			listOf(
+				Column.Definition(
+					name = "email",
+					description = "Person email",
+					type = ColumnType.StringType(),
+					optional = false
+				)
+			)
+		)
+
+		// when
+		table.restoreVersion(1)
+
+		// then
+		val restoredVersion = table.getCurrentVersion()
+		assertThat(restoredVersion.columns).hasSize(1)
+		assertThat(restoredVersion.columns.first().id).isEqualTo(version1.columns.first().id)
+	}
+
+	@Test
+	fun `should throw when restoring a non-existent version order number`() {
+		// given
+		val userId = UUID.randomUUID()
+		val table = Table(userId = userId, name = "People")
+		table.update(
+			listOf(
+				Column.Definition(
+					name = "name",
+					description = "Person name",
+					type = ColumnType.StringType(),
+					optional = false
+				)
+			)
+		)
+		table.update(
+			listOf(
+				Column.Definition(
+					name = "email",
+					description = "Person email",
+					type = ColumnType.StringType(),
+					optional = false
+				)
+			)
+		)
+
+		// when / then
+		org.assertj.core.api.Assertions.assertThatThrownBy {
+			table.restoreVersion(999)
+		}.isInstanceOf(IllegalArgumentException::class.java)
+			.hasMessageContaining("999")
 	}
 
 	@Test

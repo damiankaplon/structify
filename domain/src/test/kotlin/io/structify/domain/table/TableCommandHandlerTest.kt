@@ -107,6 +107,95 @@ internal class TableCommandHandlerTest {
 	}
 
 	@Test
+	fun `should return TableVersionCreated event with correct orderNumber on restore`() {
+		runBlocking {
+			// given
+			val userId = UUID.randomUUID()
+			val tableId = UUID.randomUUID()
+			val table = Table(id = tableId, userId = userId, name = "People")
+			tableRepository.persist(table)
+
+			val version1Def = Column.Definition(
+				name = "name",
+				description = "Person name",
+				type = ColumnType.StringType(),
+				optional = false
+			)
+			val version2Def = Column.Definition(
+				name = "email",
+				description = "Person email",
+				type = ColumnType.StringType(),
+				optional = false
+			)
+
+			handler.handle(CreateTableVersionCommand(userId = userId, tableId = tableId, columns = listOf(version1Def)))
+			handler.handle(CreateTableVersionCommand(userId = userId, tableId = tableId, columns = listOf(version2Def)))
+
+			// when
+			val event =
+				handler.handle(RestoreTableVersionCommand(userId = userId, tableId = tableId, versionOrderNumber = 1))
+
+			// then
+			assertThat(event.tableId).isEqualTo(tableId)
+			assertThat(event.userId).isEqualTo(userId)
+			assertThat(event.version.orderNumber).isEqualTo(3)
+			assertThat(event.version.columns.map { it.definition }).containsExactly(version1Def)
+		}
+	}
+
+	@Test
+	fun `should persist updated aggregate with 3 versions after restore`() {
+		runBlocking {
+			// given
+			val userId = UUID.randomUUID()
+			val tableId = UUID.randomUUID()
+			val table = Table(id = tableId, userId = userId, name = "Orders")
+			tableRepository.persist(table)
+
+			val colDef1 = Column.Definition(
+				name = "orderId",
+				description = "Order ID",
+				type = ColumnType.StringType(),
+				optional = false
+			)
+			val colDef2 = Column.Definition(
+				name = "amount",
+				description = "Order amount",
+				type = ColumnType.NumberType,
+				optional = false
+			)
+
+			handler.handle(CreateTableVersionCommand(userId = userId, tableId = tableId, columns = listOf(colDef1)))
+			handler.handle(CreateTableVersionCommand(userId = userId, tableId = tableId, columns = listOf(colDef2)))
+
+			// when
+			handler.handle(RestoreTableVersionCommand(userId = userId, tableId = tableId, versionOrderNumber = 1))
+
+			// then
+			val persisted = tableRepository.findByIdThrow(userId, tableId)
+			assertThat(persisted.versions).hasSize(3)
+		}
+	}
+
+	@Test
+	fun `should throw when table does not exist for restore command`() {
+		// given
+		val userId = UUID.randomUUID()
+		val tableId = UUID.randomUUID()
+
+		val command = RestoreTableVersionCommand(
+			userId = userId,
+			tableId = tableId,
+			versionOrderNumber = 1,
+		)
+
+		// when / then
+		assertThatThrownBy {
+			runBlocking { handler.handle(command) }
+		}.isInstanceOf(NoSuchElementException::class.java)
+	}
+
+	@Test
 	fun `should increment version orderNumber on each version creation`() {
 		runBlocking {
 			// given

@@ -1,0 +1,98 @@
+meta {
+  name: Get all versions
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{base_url}}/tables/:tableId/versions
+  body: none
+  auth: inherit
+}
+
+params:path {
+  tableId: 122842f4-1098-4d65-89e7-8339465c27f3
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+example {
+  name: example
+  
+  request: {
+    url: {{base_url}}/tables/:tableId/versions
+    method: GET
+    mode: none
+    params:path: {
+      tableId: ee2355fb-907d-41cf-bd07-cac4f3405a07
+    }
+  }
+  
+  response: {
+    headers: {
+      content-type: application/json
+      connection: keep-alive
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        [
+          {
+            "id": "4a3cfb42-bcb5-4ed0-9161-bfce2a292ced",
+            "columns": [
+              {
+                "id": "6d2d77cb-83d6-447e-82b9-34c889cfce86",
+                "name": "Receiver",
+                "description": "Eventual money receiver of the transaction",
+                "type": {
+                  "type": "STRING",
+                  "format": null
+                },
+                "optional": false,
+                "children": []
+              }
+            ],
+            "orderNumber": 1
+          },
+          {
+            "id": "8f1a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+            "columns": [
+              {
+                "id": "6d2d77cb-83d6-447e-82b9-34c889cfce86",
+                "name": "Receiver",
+                "description": "Eventual money receiver of the transaction",
+                "type": {
+                  "type": "STRING",
+                  "format": null
+                },
+                "optional": false,
+                "children": []
+              },
+              {
+                "id": "c34f10a4-a322-4c9f-8687-cb803da2421e",
+                "name": "Amount",
+                "description": "Amount of the payment or transfer. Must be always positive",
+                "type": {
+                  "type": "NUMBER",
+                  "format": null
+                },
+                "optional": false,
+                "children": []
+              }
+            ],
+            "orderNumber": 2
+          }
+        ]
+      '''
+    }
+  }
+}

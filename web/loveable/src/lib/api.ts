@@ -116,6 +116,14 @@ export const updateRow = (
     body: JSON.stringify({cells}),
   });
 
+export const getAllVersions = (token: string, tableId: string) =>
+  request<TableVersion[]>(`/tables/${tableId}/versions`, token);
+
+export const restoreVersion = (token: string, tableId: string, versionOrderNumber: number) =>
+  request<void>(`/tables/${tableId}/versions/${versionOrderNumber}/restore`, token, {
+    method: 'POST',
+  });
+
 export const generateRowFromPdf = (
   token: string,
   tableId: string,
