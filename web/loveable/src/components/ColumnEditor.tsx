@@ -9,7 +9,7 @@ import {
   ListboxOptions
 } from '@headlessui/react';
 import {useAuth} from '@/lib/auth';
-import {createVersion, type TableVersion, type ColumnInput, type ColumnDefinition} from '@/lib/api';
+import {type ColumnDefinition, type ColumnInput, createVersion, type TableVersion} from '@/lib/api';
 import {toast} from 'sonner';
 
 const TYPES = ['STRING', 'NUMBER', 'OBJECT'] as const;

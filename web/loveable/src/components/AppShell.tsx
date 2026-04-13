@@ -10,7 +10,7 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({children}) => {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-border bg-card/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/app" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <span className="text-sm font-bold text-primary-foreground">S</span>
             </div>
@@ -19,9 +19,9 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({children}) => {
 
           <nav className="flex items-center gap-6">
             <Link
-              to="/"
+              to="/app"
               className={`text-sm font-medium transition-colors hover:text-primary ${
-                location.pathname === '/' ? 'text-primary' : 'text-muted-foreground'
+                location.pathname === '/app' ? 'text-primary' : 'text-muted-foreground'
               }`}
             >
               Tables

@@ -72,7 +72,7 @@ const TableDetailPage = () => {
     <div>
       <div className="mb-6 flex items-center gap-3">
         <Link
-          to="/"
+          to="/app"
           className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

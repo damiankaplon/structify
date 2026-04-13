@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useCallback} from 'react';
+import React, {createContext, useCallback, useContext} from 'react';
 
 interface AuthContextType {
   getToken: () => string;

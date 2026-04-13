@@ -7,20 +7,34 @@ import AppShell from '@/components/AppShell';
 import TablesPage from '@/pages/TablesPage';
 import TableDetailPage from '@/pages/TableDetailPage';
 import NotFound from '@/pages/NotFound';
+import LandingPage from '@/pages/LandingPage';
 
 const App = () => (
-  <ReactKeycloakProvider authClient={keycloak} initOptions={{onLoad: 'login-required', pkceMethod: 'S256'}}>
+  <ReactKeycloakProvider authClient={keycloak} initOptions={{onLoad: 'check-sso', pkceMethod: 'S256'}}>
     <Sonner/>
     <BrowserRouter>
-      <KeycloakProtected>
-        <AppShell>
-          <Routes>
-            <Route path="/" element={<TablesPage/>}/>
-            <Route path="/tables/:tableId" element={<TableDetailPage/>}/>
-            <Route path="*" element={<NotFound/>}/>
-          </Routes>
-        </AppShell>
-      </KeycloakProtected>
+      <Routes>
+        {/* Public landing page — no auth required */}
+        <Route path="/" element={<LandingPage/>}/>
+
+        {/* Authenticated app routes */}
+        <Route
+          path="/app/*"
+          element={
+            <KeycloakProtected>
+              <AppShell>
+                <Routes>
+                  <Route path="/" element={<TablesPage/>}/>
+                  <Route path="/tables/:tableId" element={<TableDetailPage/>}/>
+                  <Route path="*" element={<NotFound/>}/>
+                </Routes>
+              </AppShell>
+            </KeycloakProtected>
+          }
+        />
+
+        <Route path="*" element={<NotFound/>}/>
+      </Routes>
     </BrowserRouter>
   </ReactKeycloakProvider>
 );

@@ -5,22 +5,22 @@ import {componentTagger} from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({mode}) => ({
-    server: {
-        hmr: {
-            overlay: false,
-        },
-        proxy: {
-            '/api': {
-                target: 'http://localhost:8080',
-                changeOrigin: true,
-            },
-        },
+  server: {
+    hmr: {
+      overlay: false
     },
-    plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
-    resolve: {
-        alias: {
-            "@": path.resolve(__dirname, "./src"),
-        },
-        dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
     },
+  },
+  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+    dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
+  },
 }));

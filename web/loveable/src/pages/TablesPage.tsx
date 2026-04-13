@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {Dialog, DialogPanel, DialogTitle} from '@headlessui/react';
 import {useAuth} from '@/lib/auth';
-import {getTables, createTable, type TableSummary} from '@/lib/api';
+import {createTable, getTables, type TableSummary} from '@/lib/api';
 import {toast} from 'sonner';
 
 const TablesPage = () => {
@@ -86,7 +86,7 @@ const TablesPage = () => {
           {tables.map((t) => (
             <Link
               key={t.id}
-              to={`/tables/${t.id}`}
+              to={`/app/tables/${t.id}`}
               className="group rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:border-primary/30 hover:shadow-md"
             >
               <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
