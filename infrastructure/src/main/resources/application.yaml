@@ -30,8 +30,3 @@ db:
   user: "$APP_STRUCTIFY_DB_USER:structify"
   password: "$APP_STRUCTIFY_DB_PASS:structify"
   schema: "$APP_STRUCTIFY_DB_SCHEMA:public"
-  keycloak:
-    jdbcUrl: "$APP_STRUCTIFY_KC_DB_URL:jdbc:postgresql://localhost:5432/keycloak?serverTimezone=UTC"
-    user: "$APP_STRUCTIFY_KC_DB_USER:keycloak"
-    password: "$APP_STRUCTIFY_KC_DB_PASS:keycloak"
-    schema: "$APP_STRUCTIFY_KC_DB_SCHEMA:public"
