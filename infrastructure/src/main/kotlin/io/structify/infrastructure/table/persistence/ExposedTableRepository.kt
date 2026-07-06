@@ -2,53 +2,73 @@ package io.structify.infrastructure.table.persistence
 
 import io.structify.domain.db.reflection.setPrivateProperty
 import io.structify.domain.table.TableRepository
+import io.structify.domain.table.model.*
 import io.structify.domain.table.model.Column
 import io.structify.domain.table.model.ColumnType
-import io.structify.domain.table.model.StringFormat
 import io.structify.domain.table.model.Table
-import io.structify.domain.table.model.Version
 import io.structify.infrastructure.db.NoEntityFoundException
-import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.notInList
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.selectAll
+import io.structify.infrastructure.db.OptimisticLockException
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.statements.UpdateBuilder
-import org.jetbrains.exposed.sql.upsert
-import java.util.UUID
+import java.util.*
 
 class ExposedTableRepository : TableRepository {
 
 	override suspend fun persist(table: Table): Table {
-		TablesTable.upsert(TablesTable.id) { row ->
-			row.updateWith(table)
-		}
+        persistRoot(table)
 
-		table.versions.forEach { version ->
-			TableVersionsTable.upsert(TableVersionsTable.id) { row ->
-				row.updateWith(table.id, version)
-			}
+        // Versions are append-only and a persisted version's columns never change,
+        // so we only insert versions that aren't stored yet and leave the rest
+        // untouched. Optimistic locking on the root guards concurrent appends.
+        val storedVersionIds = TableVersionsTable
+            .select(TableVersionsTable.id)
+            .where { TableVersionsTable.tableId eq table.id }
+            .mapTo(mutableSetOf()) { it[TableVersionsTable.id] }
 
-			// Persist columns hierarchically with parent references
-			version.columns.forEach { column ->
-				persistColumnHierarchy(column, parentId = null)
-			}
+        table.versions
+            .filterNot { it.id in storedVersionIds }
+            .forEach { version ->
+                TableVersionsTable.insert { row -> row.updateWith(table.id, version) }
 
-			// Only store top-level columns in version_column_assoc
-			version.columns.forEach { column ->
-				VersionColumnTable.upsert(VersionColumnTable.versionId, VersionColumnTable.columnDefinitionId) { row ->
-					row[VersionColumnTable.versionId] = version.id
-					row[VersionColumnTable.columnDefinitionId] = column.id
-				}
-			}
-			VersionColumnTable.deleteWhere {
-				val versionColumnIds = version.columns.map(Column::id)
-				(VersionColumnTable.versionId eq version.id) and (VersionColumnTable.columnDefinitionId notInList versionColumnIds)
-			}
-		}
+                // Column definitions are immutable and shared across versions, so
+                // insert-if-absent; the FK from the assoc row keeps them reachable.
+                version.columns.forEach { column ->
+                    persistColumnHierarchy(column, parentId = null)
+                }
+
+                // Only top-level columns are associated to the version directly.
+                version.columns.forEach { column ->
+                    VersionColumnTable.insert { row ->
+                        row[VersionColumnTable.versionId] = version.id
+                        row[VersionColumnTable.columnDefinitionId] = column.id
+                    }
+                }
+            }
 		return table
 	}
+
+    /**
+     * Optimistically inserts a new table or updates the existing one, guarding
+     * against concurrent modifications via the [TablesTable.optLock] counter.
+     */
+    private fun persistRoot(table: Table) {
+        val updated =
+            TablesTable.update({ (TablesTable.id eq table.id) and (TablesTable.optLock eq table.optLock) }) { row ->
+                row[TablesTable.userId] = table.userId
+                row[TablesTable.name] = table.name
+                row[TablesTable.optLock] = table.optLock + 1
+            }
+        if (updated == 0) {
+            val exists = !TablesTable.selectAll().where { TablesTable.id eq table.id }.empty()
+            if (exists) throw OptimisticLockException("table", table.id)
+            TablesTable.insert { row ->
+                row.updateWith(table)
+                row[TablesTable.optLock] = 0
+            }
+        } else {
+            table.optLock += 1
+        }
+    }
 
 	override suspend fun findById(userId: UUID, tableId: UUID): Table? {
 		val table = TablesTable.selectAll()
@@ -59,6 +79,7 @@ class ExposedTableRepository : TableRepository {
 					id = row[TablesTable.id],
 					userId = row[TablesTable.userId],
 					name = row[TablesTable.name],
+                    optLock = row[TablesTable.optLock],
 				)
 			} ?: return null
 
@@ -92,6 +113,7 @@ class ExposedTableRepository : TableRepository {
 					id = row[TablesTable.id],
 					userId = row[TablesTable.userId],
 					name = row[TablesTable.name],
+                    optLock = row[TablesTable.optLock],
 				)
 			}.singleOrNull() ?: throw NoEntityFoundException("Could not find table of version id: $versionId")
 
@@ -197,7 +219,8 @@ class ExposedTableRepository : TableRepository {
 	}
 
 	private fun persistColumnHierarchy(column: Column, parentId: UUID?) {
-		TableColumnsTable.upsert(TableColumnsTable.id) { row ->
+        // Immutable definition that may already be stored from an earlier version.
+        TableColumnsTable.insertIgnore { row ->
 			row.updateWith(column, parentId)
 		}
 

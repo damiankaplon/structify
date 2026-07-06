@@ -7,6 +7,7 @@ object TablesTable : ExposedTable("tables") {
     val id = uuid("id")
     val userId = uuid("user_id")
     val name = varchar("name", 255)
+    val optLock = long("opt_lock").default(0)
 
     override val primaryKey = PrimaryKey(id)
 }

@@ -1,14 +1,12 @@
 package io.structify.infrastructure.table.persistence
 
-import io.structify.domain.table.model.Column
-import io.structify.domain.table.model.ColumnType
-import io.structify.domain.table.model.StringFormat
-import io.structify.domain.table.model.Table
-import io.structify.domain.table.model.Version
+import io.structify.domain.table.model.*
+import io.structify.infrastructure.db.OptimisticLockException
 import io.structify.infrastructure.test.DatabaseIntegrationTest
 import org.assertj.core.api.Assertions.assertThat
-import java.util.UUID
+import java.util.*
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 internal class ExposedTableRepositoryIntegrationTest : DatabaseIntegrationTest() {
 
@@ -123,6 +121,27 @@ internal class ExposedTableRepositoryIntegrationTest : DatabaseIntegrationTest()
 		assertThat(secondVersion.columns).containsAll(firstVersionColumns)
 		assertThat(secondVersion.columns.map(Column::definition)).containsExactlyInAnyOrder(columnDefintion1, columnDefinition2)
 	}
+
+    @Test
+    fun `should reject a stale table update with an optimistic lock conflict`() = rollbackTransaction {
+        // given a persisted table loaded into two independent copies at the same opt-lock
+        val userId = UUID.randomUUID()
+        val tableId = UUID.randomUUID()
+        val table = Table(id = tableId, userId = userId, name = "People").apply {
+            update(listOf(Column.Definition("name", "", ColumnType.StringType(), optional = false)))
+        }
+        repo.persist(table)
+
+        val current = repo.findByIdThrow(userId, tableId)
+        val stale = repo.findByIdThrow(userId, tableId)
+
+        // when the first writer appends a version and persists
+        current.update(listOf(Column.Definition("age", "", ColumnType.NumberType, optional = false)))
+        repo.persist(current)
+
+        // then the second writer, still on the old opt-lock, is rejected
+        assertFailsWith<OptimisticLockException> { repo.persist(stale) }
+    }
 
 	@Test
 	fun `should persist and load complex nested object columns correctly`() = rollbackTransaction {

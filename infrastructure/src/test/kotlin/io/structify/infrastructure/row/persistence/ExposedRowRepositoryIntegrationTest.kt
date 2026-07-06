@@ -5,11 +5,13 @@ import io.structify.domain.row.Row
 import io.structify.domain.table.model.Column
 import io.structify.domain.table.model.ColumnType
 import io.structify.domain.table.model.Table
+import io.structify.infrastructure.db.OptimisticLockException
 import io.structify.infrastructure.table.persistence.ExposedTableRepository
 import io.structify.infrastructure.test.DatabaseIntegrationTest
 import org.assertj.core.api.Assertions.assertThat
-import java.util.UUID
+import java.util.*
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 internal class ExposedRowRepositoryIntegrationTest : DatabaseIntegrationTest() {
 
@@ -108,6 +110,32 @@ internal class ExposedRowRepositoryIntegrationTest : DatabaseIntegrationTest() {
 		assertThat(foundRow.cells).hasSize(1)
 		assertThat(foundRow.cells).containsExactlyInAnyOrderElementsOf(updatedRow.cells)
 	}
+
+    @Test
+    fun `should reject a stale row update with an optimistic lock conflict`() = rollbackTransaction {
+        // given a persisted row loaded into two independent copies at the same opt-lock
+        val userId = UUID.randomUUID()
+        val tableId = UUID.randomUUID()
+        val table = Table(id = tableId, userId = userId, name = "Test Table")
+        table.update(listOf(Column.Definition("column1", "", ColumnType.StringType(), optional = false)))
+        tableRepo.persist(table)
+        val column1 = table.getCurrentVersion().columns.first()
+
+        val row = Row(
+            versionId = table.getCurrentVersion().id,
+            cells = linkedSetOf(Cell(column1.id, value = "value1"))
+        )
+        rowRepo.save(row)
+
+        val current = rowRepo.findByIdOrThrow(row.id)
+        val stale = rowRepo.findByIdOrThrow(row.id)
+
+        // when the first writer commits its change
+        rowRepo.save(current)
+
+        // then the second writer, still on the old opt-lock, is rejected
+        assertFailsWith<OptimisticLockException> { rowRepo.save(stale) }
+    }
 
 	@Test
 	fun `should save and load row with complex nested cell hierarchy`() = rollbackTransaction {

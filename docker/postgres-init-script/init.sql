@@ -15,6 +15,3 @@ CREATE
 
 GRANT ALL PRIVILEGES ON DATABASE
     keycloak TO keycloak;
-
-\c structify
-CREATE EXTENSION postgis;

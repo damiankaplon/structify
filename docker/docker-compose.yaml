@@ -11,11 +11,11 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - structify_postgres_volume:/var/lib/postgresql/data
+      - structify_postgres_volume:/var/lib/postgresql
       - ./postgres-init-script:/docker-entrypoint-initdb.d
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0.6
+    image: quay.io/keycloak/keycloak:26.6
     container_name: keycloak
     ports:
       - "8282:8080"

@@ -4,32 +4,48 @@ import io.structify.domain.row.Cell
 import io.structify.domain.row.Row
 import io.structify.domain.row.RowRepository
 import io.structify.infrastructure.db.NoEntityFoundException
+import io.structify.infrastructure.db.OptimisticLockException
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.statements.UpdateBuilder
-import org.jetbrains.exposed.sql.upsert
-import java.util.UUID
+import java.util.*
 
 class ExposedRowRepository : RowRepository {
 
 	override suspend fun save(row: Row): Row {
-		RowsTable.upsert(RowsTable.id) { dbRow ->
-			dbRow.updateWith(row)
-		}
+        persistRoot(row)
 
-		// Delete ALL existing cells for this row first to avoid unique constraint violations
+        // Cells are wholly owned by the row: wipe and re-insert the collection.
+        // The delete cascades to nested cells via the parent_cell_id FK, so no
+        // orphan bookkeeping is needed here.
 		CellsTable.deleteWhere { CellsTable.rowId eq row.id }
-		
-		// Persist cells hierarchically
 		row.cells.forEach { cell ->
 			persistCellHierarchy(row.id, cell, parentCellId = null)
 		}
-		
+
 		return row
 	}
+
+    /**
+     * Optimistically inserts a new row or updates the existing one, guarding
+     * against concurrent modifications via the [RowsTable.optLock] counter.
+     */
+    private fun persistRoot(row: Row) {
+        val updated = RowsTable.update({ (RowsTable.id eq row.id) and (RowsTable.optLock eq row.optLock) }) { dbRow ->
+            dbRow[RowsTable.versionId] = row.versionId
+            dbRow[RowsTable.optLock] = row.optLock + 1
+        }
+        if (updated == 0) {
+            val exists = !RowsTable.selectAll().where { RowsTable.id eq row.id }.empty()
+            if (exists) throw OptimisticLockException("row", row.id)
+            RowsTable.insert { dbRow ->
+                dbRow[RowsTable.id] = row.id
+                dbRow[RowsTable.versionId] = row.versionId
+                dbRow[RowsTable.optLock] = 0
+            }
+        } else {
+            row.optLock += 1
+        }
+    }
 
 	override suspend fun findById(id: UUID): Row? {
 		return RowsTable.selectAll()
@@ -39,18 +55,14 @@ class ExposedRowRepository : RowRepository {
 				return Row(
 					id = row[RowsTable.id],
 					versionId = row[RowsTable.versionId],
-					cells = fetchCells(row[RowsTable.id])
+                    cells = fetchCells(row[RowsTable.id]),
+                    optLock = row[RowsTable.optLock]
 				)
 			}
 	}
 
 	override suspend fun findByIdOrThrow(id: UUID): Row =
 		findById(id) ?: throw NoEntityFoundException("Row with id $id not found")
-
-	private fun UpdateBuilder<*>.updateWith(row: Row) {
-		this[RowsTable.id] = row.id
-		this[RowsTable.versionId] = row.versionId
-	}
 
 	private fun fetchCells(rowId: UUID): Set<Cell> {
 		// Fetch only top-level cells (those without a parent)

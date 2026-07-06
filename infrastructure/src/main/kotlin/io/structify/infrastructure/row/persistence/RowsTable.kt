@@ -9,6 +9,7 @@ object RowsTable : ExposedTable("rows") {
 
 	val id = uuid("id")
 	val versionId = reference("version_id", TableVersionsTable.id, onDelete = ReferenceOption.CASCADE)
+    val optLock = long("opt_lock").default(0)
 
 	override val primaryKey = PrimaryKey(id)
 }

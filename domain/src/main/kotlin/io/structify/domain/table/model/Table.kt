@@ -6,6 +6,11 @@ class Table(
 	val id: UUID = UUID.randomUUID(),
 	val userId: UUID,
 	val name: String,
+    /**
+     * Optimistic-lock counter, managed exclusively by the persistence layer.
+     * Not to be confused with the schema [versions] of the table.
+     */
+    var optLock: Long = 0,
 ) {
 
 	var versions = emptySet<Version>(); private set
